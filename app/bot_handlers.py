@@ -1,0 +1,185 @@
+from aiogram import Router, F
+from aiogram.types import Message, CallbackQuery
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+from sqlalchemy.orm import Session
+
+from .models import Notice
+from .updater import get_meta
+
+router = Router()
+
+def kb_start():
+    kb = InlineKeyboardBuilder()
+    kb.button(text="🏗️ OBRAS", callback_data="pick:OBRAS")
+    kb.button(text="🧠 ING (Servicios)", callback_data="pick:ING")
+    kb.button(text="🔁 RESET", callback_data="reset")
+    kb.adjust(2, 1)
+    return kb.as_markup()
+
+def kb_mode(kind: str):
+    kb = InlineKeyboardBuilder()
+    kb.button(text="🟢 ABIERTAS", callback_data=f"mode:{kind}:OPEN")
+    kb.button(text="🔴 CERRADAS", callback_data=f"mode:{kind}:CLOSED")
+    kb.button(text="🏠 INICIO", callback_data="home")
+    kb.button(text="🔁 RESET", callback_data="reset")
+    kb.adjust(2, 2)
+    return kb.as_markup()
+
+@router.message(F.text == "/start")
+async def start_cmd(msg: Message):
+    await msg.answer(
+        "👋 ¡Hola! Soy tu bot de licitaciones.\n\n"
+        "Elige qué quieres ver:",
+        reply_markup=kb_start()
+    )
+
+@router.callback_query(F.data == "home")
+async def home(cb: CallbackQuery):
+    await cb.message.edit_text("🏠 Menú principal:", reply_markup=kb_start())
+    await cb.answer()
+
+@router.callback_query(F.data == "reset")
+async def reset(cb: CallbackQuery):
+    await cb.message.edit_text("✅ Reset hecho. Volvemos al inicio:", reply_markup=kb_start())
+    await cb.answer()
+
+@router.callback_query(F.data.startswith("pick:"))
+async def pick_kind(cb: CallbackQuery, db: Session):
+    kind = cb.data.split(":")[1]
+    await cb.message.edit_text(
+        f"Perfecto 😄 Has elegido: **{kind}**\n\nAhora elige el modo:",
+        reply_markup=kb_mode(kind),
+        parse_mode="Markdown"
+    )
+    await cb.answer()
+
+def format_money(x):
+    if x is None:
+        return "—"
+    try:
+        return f"{x:,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".")
+    except:
+        return str(x)
+
+@router.callback_query(F.data.startswith("mode:"))
+async def show_mode(cb: CallbackQuery, db: Session):
+    _, kind, mode = cb.data.split(":")
+    last_update = get_meta(db, "last_update_human", "—")
+
+    contract_type_id = 1 if kind == "OBRAS" else 2
+
+    # =========================
+    # ABIERTAS (OBRAS o ING)
+    # =========================
+    if mode == "OPEN":
+        q = db.query(Notice).filter(
+            Notice.contract_type_id == contract_type_id,
+            Notice.procedure_status_id == 3,
+            Notice.last_publication_date >= "2025-10-01"
+        ).order_by(Notice.last_publication_date.desc())
+
+        analyzed = q.count()
+        items = q.limit(10).all()
+        cumplen = len(items)
+
+        lines = []
+        for n in items:
+            url = n.main_entity_of_page or "—"
+            title = n.object or "(Sin título)"
+            org = n.contracting_authority_name or "—"
+            last_date = n.last_publication_date or n.first_publication_date or "—"
+            budget = format_money(n.budget_without_vat)
+
+            lines.append(
+                f"🏷️ **{title}**\n"
+                f"🏛️ {org}\n"
+                f"📅 `{last_date}` | 💶 {budget}\n"
+                f"🔗 {url}"
+            )
+
+        text = (
+            f"🟢 **{kind} ABIERTAS**\n"
+            f"🕒 Última actualización BD: `{last_update}`\n"
+            f"📌 Anuncios analizados: **{analyzed}** | Mostrando: **{cumplen}**\n\n"
+            + ("\n\n———\n\n".join(lines) if lines else "No hay resultados en este momento.")
+        )
+
+        await cb.message.edit_text(text, parse_mode="Markdown", reply_markup=kb_mode(kind))
+        await cb.answer()
+        return
+
+    # =========================
+    # CERRADAS (OBRAS o ING)
+    # Para ING aquí podrías filtrar CPV 71/72 si lo quieres,
+    # pero como dijiste "por ahora solo ABIERTAS sin CPV",
+    # dejo CERRADAS como estaba: buscar contrato asociado con awardAmountWithoutVAT.
+    # =========================
+
+    q = db.query(Notice).filter(
+        Notice.contract_type_id == contract_type_id,
+        Notice.procedure_status_id != 3
+    ).order_by(Notice.last_publication_date.desc())
+
+    analyzed = q.count()
+    notices = q.limit(50).all()
+
+    results = []
+    for n in notices:
+        # contrato asociado con importes
+        best = None
+        for c in n.contracts:
+            if c.award_amount_without_vat is not None:
+                best = c
+                break
+        if not best:
+            continue
+
+        budget = n.budget_without_vat
+        award = best.award_amount_without_vat
+        baja = "—"
+        if budget and award is not None and budget > 0:
+            baja_pct = (budget - award) / budget * 100.0
+            baja = f"{baja_pct:.2f}%".replace(".", ",")
+
+        last_date = n.last_publication_date or n.first_publication_date or "—"
+        plazo = best.months_contract_duration
+        plazo_txt = f"{plazo} meses" if plazo is not None else "—"
+
+        results.append({
+            "title": n.object or "(Sin título)",
+            "org": n.contracting_authority_name or "—",
+            "last_date": last_date,
+            "plazo": plazo_txt,
+            "budget": format_money(budget),
+            "award": format_money(award),
+            "baja": baja,
+            "url": n.main_entity_of_page or best.main_entity_of_page or "—"
+        })
+
+        if len(results) >= 10:
+            break
+
+    cumplen = len(results)
+
+    blocks = []
+    for r in results:
+        blocks.append(
+            f"🏷️ **{r['title']}**\n"
+            f"🏛️ {r['org']}\n"
+            f"📅 Últ. publicación: `{r['last_date']}`\n"
+            f"⏳ Plazo: **{r['plazo']}**\n"
+            f"💶 Inicial s/IVA: **{r['budget']}**\n"
+            f"✅ Contrato s/IVA: **{r['award']}**\n"
+            f"📉 Baja: **{r['baja']}**\n"
+            f"🔗 {r['url']}"
+        )
+
+    text = (
+        f"🔴 **{kind} CERRADAS**\n"
+        f"🕒 Última actualización BD: `{last_update}`\n"
+        f"📌 Anuncios analizados: **{analyzed}** | Cumplen filtro: **{cumplen}**\n\n"
+        + ("\n\n———\n\n".join(blocks) if blocks else "No he encontrado cerradas con datos completos.")
+    )
+
+    await cb.message.edit_text(text, parse_mode="Markdown", reply_markup=kb_mode(kind))
+    await cb.answer()
