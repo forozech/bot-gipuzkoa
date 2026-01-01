@@ -64,24 +64,23 @@ def fmt_money(x):
 BIG_AMOUNT = 1_000_000
 ALERT_DAYS = 7
 
-
-def build_summary(entities):
+def build_summary(entities, max_entities=5, max_items_per_entity=3):
     today = datetime.utcnow().date()
 
     lines = [
         "🟢🟢🟢 **ABIERTAS — RESUMEN RÁPIDO** 🟢🟢🟢\n"
     ]
 
-    for entity, items in entities:
+    for entity, items in entities[:max_entities]:
         items_sorted = sorted(
             items,
             key=lambda x: x.get("deadlineDate") or "9999-12-31"
         )
 
         total_entity = 0.0
-        lines.append(f"🏛️ __**{entity.upper()}**__")
+        lines.append(f"🏛️ **{entity.upper()}**")
 
-        for it in items_sorted:
+        for it in items_sorted[:max_items_per_entity]:
             published = fmt_date(it.get("firstPublicationDate"))
             deadline_raw = it.get("deadlineDate")
             deadline = fmt_date(deadline_raw)
@@ -104,16 +103,14 @@ def build_summary(entities):
             money_icon = "💎💰" if amount and amount >= BIG_AMOUNT else "💰"
 
             lines.append(
-                f"📅 {published}  ⏰ {deadline}{alert}\n"
-                f"{money_icon} {money}"
+                f"📅 {published} ⏰ {deadline}{alert} · {money_icon} {money}"
             )
 
-        lines.append(f"📊 **Total entidad:** {fmt_money(total_entity)}\n")
+        lines.append(f"📊 Total entidad: {fmt_money(total_entity)}\n")
 
-    lines.append("━━━━━━━━━━━━━━━━━━\n👇 **DETALLE DE ANUNCIOS** 👇\n")
+    lines.append("👇 **DETALLE COMPLETO ABAJO (PAGINADO)** 👇\n")
 
     return "\n".join(lines)
-
 
 # =========================
 # TECLADOS
@@ -255,6 +252,11 @@ async def render_page(cb, kind, entities, page, page_size=3):
         + "\n".join(lines)
     )
 
+    MAX_LEN = 3500
+    if len(text) > MAX_LEN:
+       text = text[:MAX_LEN] + "\n\n⚠️ _Contenido truncado_"
+
+    
     await safe_edit(
         cb.message,
         text,
