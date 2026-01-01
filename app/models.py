@@ -1,7 +1,10 @@
 from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from .db import Base
+from .database import Base
+from sqlalchemy import Column, Integer, String, Date, Numeric, ForeignKey
+from sqlalchemy.orm import relationship
+
 
 class Meta(Base):
     __tablename__ = "meta"
