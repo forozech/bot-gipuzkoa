@@ -63,6 +63,9 @@ def fmt_money(x):
 
 BIG_AMOUNT = 1_000_000
 ALERT_DAYS = 7
+MAX_ENTITIES_SUMMARY = 2
+MAX_ITEMS_PER_ENTITY = 3
+
 
 def build_summary_page(entities, page, page_size=2):
     today = datetime.utcnow().date()
@@ -71,10 +74,12 @@ def build_summary_page(entities, page, page_size=2):
     block = entities[page*page_size:(page+1)*page_size]
 
     lines = [
-        "|✨🔦📸|**RESUMEN**|🧾🔥💡|\_________________"
-    ]
+    "━━━━━━━━━━━━━━━━━━━━",
+    "✨🔦**RESUMEN**🧾💡",
+    "━━━━━━━━━━━━━━━━━━━━"
+]
 
-    for entity, items in entities[:max_entities]:
+    for entity, items in block:
         items_sorted = sorted(
             items,
             key=lambda x: x.get("deadlineDate") or "9999-12-31"
@@ -83,7 +88,7 @@ def build_summary_page(entities, page, page_size=2):
         total_entity = 0.0
         lines.append(f"🥸 **{entity.upper()}**")
 
-        for it in items_sorted[:max_items_per_entity]:
+        for it in items_sorted[:MAX_ITEMS_PER_ENTITY]:
             published = fmt_date(it.get("firstPublicationDate"))
             deadline_raw = it.get("deadlineDate")
             deadline = fmt_date(deadline_raw)
@@ -111,8 +116,10 @@ def build_summary_page(entities, page, page_size=2):
 
         lines.append(f"💶💴💵: {fmt_money(total_entity)}\n")
 
-    lines.append("_________________/║**DETALLE**🫢😵✊║\_________________")
-
+    lines.append("\n━━━━━━━━━━━━━━━━━━━━")
+    lines.append("🧾**DETALLE DE ANUNCIOS**🫢😵✊")
+    lines.append("━━━━━━━━━━━━━━━━━━━━\n")
+   
     return "\n".join(lines)
 
 # =========================
