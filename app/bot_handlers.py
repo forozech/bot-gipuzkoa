@@ -123,7 +123,7 @@ def build_summary_page(entities, summary_page, summary_page_size=5):
     lines.append("━━━━━━━━━━━━━━━━━━━━\n")
 
     lines.append("━━━━━━━━━━━━━━━━━━━━")
-    lines.append(f"📄 _Resumen · Página {page+1}/{total_pages}_")
+    lines.append(f"📄 _Resumen · Página {summary_page+1}/{total_pages}_")
     return "\n".join(lines)
 
 # =========================
@@ -241,7 +241,7 @@ async def render_page(cb, kind, entities, page, page_size=2):
     lines = []
 
     # ✅ Resumen paginado
-      lines.append(build_summary_page(
+    lines.append(build_summary_page(
         entities,
         summary_page=page,
         summary_page_size=SUMMARY_PAGE_SIZE
