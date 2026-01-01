@@ -1,3 +1,13 @@
+from aiogram.exceptions import TelegramBadRequest
+
+async def safe_edit(message, text: str, **kwargs):
+    try:
+        await message.edit_text(text, **kwargs)
+    except TelegramBadRequest as e:
+        if "message is not modified" in str(e):
+            return
+        raise
+
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
