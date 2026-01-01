@@ -50,7 +50,7 @@ async def home(cb: CallbackQuery):
 
 @router.callback_query(F.data == "reset")
 async def reset(cb: CallbackQuery):
-    await cb.message.edit_text("✅ Reset hecho. Volvemos al inicio:", reply_markup=kb_start())
+    await safe_edit(cb.message, "✅ Reset hecho. Volvemos al inicio:", reply_markup=kb_start())
     await cb.answer()
 
 @router.callback_query(F.data.startswith("pick:"))
