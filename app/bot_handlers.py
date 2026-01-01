@@ -206,6 +206,62 @@ async def pick_kind(cb: CallbackQuery):
 @router.callback_query(F.data.startswith("mode:"))
 async def show_mode(cb: CallbackQuery):
     _, kind, mode = cb.data.split(":")
+    @router.callback_query(F.data.startswith("view:"))
+async def show_view(cb: CallbackQuery):
+    _, kind, mode, view = cb.data.split(":")
+
+    contract_type_id = 1 if kind == "OBRAS" else 2
+    status_id = 3 if mode == "OPEN" else 4  # ajusta si Euskadi usa otro
+
+    cache_key = f"{mode}:{contract_type_id}"
+    data = get_cache(cache_key)
+
+    if not data:
+        url = (
+            "https://api.euskadi.eus/procurements/contracting-notices"
+            f"?contract-type-id={contract_type_id}"
+            f"&contract-procedure-status-id={status_id}"
+            "&itemsOfPage=50"
+            "&lang=SPANISH"
+        )
+        async with httpx.AsyncClient(timeout=5) as client:
+            r = await client.get(url)
+            data = r.json()
+        set_cache(cache_key, data)
+
+    items = data.get("items", [])
+    grouped = {}
+
+    for it in items:
+        ent = (it.get("entity") or {}).get("name", "OTROS")
+        grouped.setdefault(ent, []).append(it)
+
+    entities = sorted(grouped.items(), key=lambda x: x[0])
+
+    # 📋 RESUMEN
+    if view == "SUMMARY":
+        text = (
+            f"📋 **RESUMEN {kind} · {mode}**\n\n"
+            + build_summary_page(
+                entities,
+                summary_page=0,
+                summary_page_size=SUMMARY_PAGE_SIZE
+            )
+        )
+
+        await safe_edit(
+            cb.message,
+            text,
+            parse_mode="Markdown",
+            reply_markup=kb_view(kind, mode),
+            disable_web_page_preview=True
+        )
+        await cb.answer()
+        return
+
+    # 🔍 DETALLE
+    await render_page(cb, kind, entities, page=0)
+
 await safe_edit(
         cb.message,
         f"🔎 **{kind} · {mode}**\n\nElige vista:",
