@@ -1,16 +1,32 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Text,
+    Numeric,
+)
 from sqlalchemy.orm import relationship
 from datetime import datetime
+
 from .database import Base
-from sqlalchemy import Column, Integer, String, Date, Numeric, ForeignKey
-from sqlalchemy.orm import relationship
 
 
+# =========================
+# META
+# =========================
 class Meta(Base):
     __tablename__ = "meta"
+
     key = Column(String, primary_key=True)
     value = Column(String, nullable=False)
 
+
+# =========================
+# NOTICE
+# =========================
 class Notice(Base):
     __tablename__ = "notices"
 
@@ -28,18 +44,25 @@ class Notice(Base):
     procedure_status_id = Column(Integer)
 
     deadline_date = Column(String)
-    budget_without_vat = Column(Float)
+    budget_without_vat = Column(Numeric)
 
     main_entity_of_page = Column(String)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
     contracts = relationship("Contract", back_populates="notice")
 
+
+# =========================
+# CONTRACT
+# =========================
 class Contract(Base):
     __tablename__ = "contracts"
 
     id = Column(String, primary_key=True)
-    contracting_notice_id = Column(Integer, ForeignKey("notices.id"))
+    contracting_notice_id = Column(
+        Integer,
+        ForeignKey("notices.id")
+    )
 
     object = Column(Text)
     contract_type_id = Column(Integer)
@@ -48,8 +71,9 @@ class Contract(Base):
 
     award_date = Column(String)
     contract_end_date = Column(String)
-    award_amount = Column(Float)
-    award_amount_without_vat = Column(Float)
+
+    award_amount = Column(Numeric)
+    award_amount_without_vat = Column(Numeric)
     months_contract_duration = Column(Integer)
 
     cpv = Column(String)
