@@ -8,7 +8,6 @@ from aiogram.enums import ParseMode
 
 from .bot_handlers import router
 from .middlewares import DBSessionMiddleware
-from .database import SessionLocal  # ajusta si tu archivo se llama distinto
 
 
 # =========================
@@ -42,7 +41,6 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 if not BOT_TOKEN:
     raise RuntimeError("BOT_TOKEN no definido")
 
-
 bot = Bot(
     token=BOT_TOKEN,
     parse_mode=ParseMode.MARKDOWN
@@ -51,8 +49,8 @@ bot = Bot(
 dp = Dispatcher()
 dp.include_router(router)
 
-# middleware DB
-dp.update.middleware(DBSessionMiddleware(SessionLocal))
+# middleware DB (SIN parámetros)
+dp.update.middleware(DBSessionMiddleware())
 
 
 # =========================
@@ -67,8 +65,8 @@ async def on_startup():
 async def start_bot():
     try:
         await dp.start_polling(bot)
-    except Exception as e:
-        logging.exception("Error en polling del bot", exc_info=e)
+    except Exception:
+        logging.exception("Error en polling del bot")
 
 
 @app.on_event("shutdown")
