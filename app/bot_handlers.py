@@ -279,8 +279,7 @@ async def show_view(cb: CallbackQuery):
         return
 
     # 🔍 DETALLE
-    async def render_page(cb, kind, mode, entities, page, page_size=2):
-            
+               
 # =========================
 # RENDER + PAGINACIÓN
 # =========================
