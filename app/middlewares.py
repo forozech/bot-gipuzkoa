@@ -1,9 +1,11 @@
-from typing import Callable, Dict, Any, Awaitable
-from aiogram import BaseMiddleware
+from typing import Callable, Awaitable, Dict, Any
+from aiogram.dispatcher.middlewares.base import BaseMiddleware
 from sqlalchemy.orm import Session
+
 from .db import SessionLocal
 
-class DbSessionMiddleware(BaseMiddleware):
+
+class DBSessionMiddleware(BaseMiddleware):
     async def __call__(
         self,
         handler: Callable[[Any, Dict[str, Any]], Awaitable[Any]],
@@ -12,7 +14,7 @@ class DbSessionMiddleware(BaseMiddleware):
     ) -> Any:
         db: Session = SessionLocal()
         try:
-            data["db"] = db  # <-- esto permite usar "db" en tus handlers
+            data["db"] = db
             return await handler(event, data)
         finally:
             db.close()
