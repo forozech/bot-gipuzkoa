@@ -212,3 +212,44 @@ async def show_mode(cb: CallbackQuery, db: Session):
 
     await safe_edit(cb.message, text, parse_mode="Markdown", reply_markup=kb_mode(kind))
     await cb.answer()
+
+async def render_open_page(cb, kind, items, page, page_size):
+    total = len(items)
+    total_pages = (total + page_size - 1) // page_size
+
+    start = page * page_size
+    end = start + page_size
+    page_items = items[start:end]
+
+    lines = []
+    for idx, it in enumerate(page_items, start=start + 1):
+        title = it.get("object") or "(Sin título)"
+        org = it.get("contractingAuthority", {}).get("name", "—")
+        created = fmt_date(it.get("firstPublicationDate"))
+        deadline = fmt_date(it.get("tenderSubmissionDeadline"))
+        budget = fmt_money(it.get("budget", {}).get("amountWithoutVat"))
+        url = it.get("mainEntityOfPage") or "—"
+
+        lines.append(
+            f"{idx}️⃣ **{title}**\n"
+            f"🏛️ {org}\n"
+            f"🆕 Publicado: **{created}**\n"
+            f"⏰ Límite: **{deadline}**\n"
+            f"💶 Presupuesto: **{budget}**\n"
+            f"🔗 {url}"
+        )
+
+    text = (
+        f"🟢 **{kind} ABIERTAS**\n"
+        f"📌 Total: **{total}** | Página **{page + 1}/{total_pages}**\n\n"
+        + "\n\n———\n\n".join(lines)
+    )
+
+    await safe_edit(
+        cb.message,
+        text,
+        parse_mode="Markdown",
+        reply_markup=kb_pagination(kind, "OPEN", page, total_pages),
+        disable_web_page_preview=True
+    )
+    await cb.answer()
