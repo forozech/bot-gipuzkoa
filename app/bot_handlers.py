@@ -231,13 +231,13 @@ async def show_mode(cb: CallbackQuery):
 # =========================
 # RENDER + PAGINACIÓN
 # =========================
-async def render_page(cb, kind, entities, page, page_size=3):
+async def render_page(cb, kind, entities, page, page_size=2):
     total_pages = (len(entities) + page_size - 1) // page_size
     block = entities[page*page_size:(page+1)*page_size]
 
     lines = []
 
-    summary_text, summary_pages = build_summary_page(entities, page)
+    summary_text = build_summary_page(entities, page)
     lines.append(summary_text)
     lines.append("_________________/║**DETALLE**🫢😵✊║\_________________")
     
@@ -246,7 +246,7 @@ async def render_page(cb, kind, entities, page, page_size=3):
     for entity, items in block:
         lines.append(f"__**{entity.upper()}**__\n")
 
-        for it in items:
+        for it in items[:2]:
             lines.append(
                 f"{counter}️⃣ {it.get('object','(Sin título)')}\n"
                 f"⏱️ DESDE: {fmt_date(it.get('firstPublicationDate'))}\n"
@@ -262,11 +262,7 @@ async def render_page(cb, kind, entities, page, page_size=3):
         + "\n".join(lines)
     )
 
-    MAX_LEN = 3500
-    if len(text) > MAX_LEN:
-       text = text[:MAX_LEN] + "\n\n⚠️ _Contenido truncado_"
-
-    
+       
     await safe_edit(
         cb.message,
         text,
