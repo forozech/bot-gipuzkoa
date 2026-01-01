@@ -67,7 +67,7 @@ MAX_ENTITIES_SUMMARY = 2
 MAX_ITEMS_PER_ENTITY = 3
 
 
-def build_summary_page(entities, page, page_size=2):
+def build_summary_page(entities, page, page_size):
     today = datetime.utcnow().date()
 
     total_pages = (len(entities) + page_size - 1) // page_size
@@ -76,7 +76,8 @@ def build_summary_page(entities, page, page_size=2):
     lines = [
     "━━━━━━━━━━━━━━━━━━━━",
     "✨🔦**RESUMEN**🧾💡",
-    "━━━━━━━━━━━━━━━━━━━━"
+    "━━━━━━━━━━━━━━━━━━━━",
+    f"Pág. {page+1}/{total_pages}",
 ]
 
     for entity, items in block:
@@ -237,9 +238,9 @@ async def render_page(cb, kind, entities, page, page_size=2):
 
     lines = []
 
-    summary_text = build_summary_page(entities, page=0)
-    lines.append(summary_text)
-        
+    # ✅ Resumen paginado
+    lines.append(build_summary_page(entities, page, page_size))
+          
     counter = 1 + page * 50
 
     for entity, items in block:
