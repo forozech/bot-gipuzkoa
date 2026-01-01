@@ -270,9 +270,6 @@ await safe_edit(
     )
     await cb.answer()
     
-    if mode != "OPEN":
-        return
-
     contract_type_id = 1 if kind == "OBRAS" else 2
     cache_key = f"open:{contract_type_id}"
     data = get_cache(cache_key)
