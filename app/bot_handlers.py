@@ -4,7 +4,6 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.exceptions import TelegramBadRequest
 
 from sqlalchemy.orm import Session
-from datetime import datetime
 import httpx
 import time
 
@@ -231,7 +230,7 @@ async def render_page(cb, kind, entities, page, page_size=3):
 
     lines = []
 
-        # 🔹 RESUMEN VISUAL SOLO EN LA PRIMERA PÁGINA
+# 🔹 RESUMEN VISUAL SOLO EN LA PRIMERA PÁGINA
     if page == 0:
         lines.append(build_summary(entities))
 
