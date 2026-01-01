@@ -68,7 +68,7 @@ def build_summary(entities, max_entities=5, max_items_per_entity=3):
     today = datetime.utcnow().date()
 
     lines = [
-        "🟢🟢🟢 **ABIERTAS — RESUMEN RÁPIDO** 🟢🟢🟢\n"
+        "|✨🔦📸|**RESUMEN**|🧾🔥💡|\_________________"
     ]
 
     for entity, items in entities[:max_entities]:
@@ -78,7 +78,7 @@ def build_summary(entities, max_entities=5, max_items_per_entity=3):
         )
 
         total_entity = 0.0
-        lines.append(f"🏛️ **{entity.upper()}**")
+        lines.append(f"🥸 **{entity.upper()}**")
 
         for it in items_sorted[:max_items_per_entity]:
             published = fmt_date(it.get("firstPublicationDate"))
@@ -96,19 +96,19 @@ def build_summary(entities, max_entities=5, max_items_per_entity=3):
                 try:
                     d = datetime.fromisoformat(deadline_raw[:10]).date()
                     if (d - today).days <= ALERT_DAYS:
-                        alert = " 🔴🔔"
+                        alert = " 👨‍💻❗"
                 except:
                     pass
 
             money_icon = "💎💰" if amount and amount >= BIG_AMOUNT else "💰"
 
             lines.append(
-                f"📅 {published} ⏰ {deadline}{alert} · {money_icon} {money}"
+                f"⏱️ {published} ⏰ {deadline}{alert} · {money_icon} {money}"
             )
 
-        lines.append(f"📊 Total entidad: {fmt_money(total_entity)}\n")
+        lines.append(f"📊 TOTAL: {fmt_money(total_entity)}\n")
 
-    lines.append("👇 **DETALLE COMPLETO ABAJO (PAGINADO)** 👇\n")
+    lines.append("_________________/║**DETALLE**🫢😵✊║\_________________")
 
     return "\n".join(lines)
 
@@ -117,19 +117,19 @@ def build_summary(entities, max_entities=5, max_items_per_entity=3):
 # =========================
 def kb_start():
     kb = InlineKeyboardBuilder()
-    kb.button(text="🏗️ OBRAS", callback_data="pick:OBRAS")
-    kb.button(text="🧠 ING (Servicios)", callback_data="pick:ING")
-    kb.button(text="🔁 RESET", callback_data="reset")
+    kb.button(text="║👨‍🔧║", callback_data="pick:OBRAS")
+    kb.button(text="║👩‍💻║", callback_data="pick:ING")
+    kb.button(text="║🔌║", callback_data="reset")
     kb.adjust(2, 1)
     return kb.as_markup()
 
 
 def kb_mode(kind: str):
     kb = InlineKeyboardBuilder()
-    kb.button(text="🟢 ABIERTAS", callback_data=f"mode:{kind}:OPEN")
-    kb.button(text="🔴 CERRADAS", callback_data=f"mode:{kind}:CLOSED")
-    kb.button(text="🏠 INICIO", callback_data="home")
-    kb.button(text="🔁 RESET", callback_data="reset")
+    kb.button(text="║⏱️ ABIERTAS║", callback_data=f"mode:{kind}:OPEN")
+    kb.button(text="║⏰ CERRADAS║", callback_data=f"mode:{kind}:CLOSED")
+    kb.button(text="║🚀 INICIO║", callback_data="home")
+    kb.button(text="║🏴‍☠️ RESET║", callback_data="reset")
     kb.adjust(2, 2)
     return kb.as_markup()
 
@@ -137,10 +137,10 @@ def kb_mode(kind: str):
 def kb_pages(kind, page, total_pages):
     kb = InlineKeyboardBuilder()
     if page > 0:
-        kb.button(text="⬅️", callback_data=f"page:{kind}:{page-1}")
+        kb.button(text="◁", callback_data=f"page:{kind}:{page-1}")
     if page < total_pages - 1:
-        kb.button(text="➡️", callback_data=f"page:{kind}:{page+1}")
-    kb.button(text="🏠 INICIO", callback_data="home")
+        kb.button(text="▷", callback_data=f"page:{kind}:{page+1}")
+    kb.button(text="🚀", callback_data="home")
     kb.adjust(2, 1)
     return kb.as_markup()
 
@@ -151,7 +151,7 @@ def kb_pages(kind, page, total_pages):
 @router.message(F.text == "/start")
 async def start_cmd(msg: Message):
     await msg.answer(
-        "👋 ¡Hola! Bot de licitaciones Euskadi.\n\nElige:",
+        "║★ ☆ ✓ ✗ ∞ √ ∑ 🔥║",
         reply_markup=kb_start()
     )
 
@@ -173,7 +173,7 @@ async def pick_kind(cb: CallbackQuery):
     kind = cb.data.split(":")[1]
     await safe_edit(
         cb.message,
-        f"Has elegido **{kind}**.\n\nSelecciona modo:",
+        f"‖👨‍🔧**{kind}**‖",
         reply_markup=kb_mode(kind),
         parse_mode="Markdown"
     )
@@ -239,16 +239,16 @@ async def render_page(cb, kind, entities, page, page_size=3):
         for it in items:
             lines.append(
                 f"{counter}️⃣ {it.get('object','(Sin título)')}\n"
-                f"📅 Publicado: {fmt_date(it.get('firstPublicationDate'))}\n"
-                f"⏰ Límite: {fmt_date(it.get('deadlineDate'))}\n"
-                f"💶 {fmt_money(it.get('budgetWithoutVAT'))}\n"
+                f"⏱️ DESDE: {fmt_date(it.get('firstPublicationDate'))}\n"
+                f"⏰🖊 HASTA: {fmt_date(it.get('deadlineDate'))}\n"
+                f"💰 {fmt_money(it.get('budgetWithoutVAT'))}\n"
                 f"🔗 {it.get('mainEntityOfPage','—')}\n"
             )
             counter += 1
 
     text = (
-        f"🟢 **{kind} ABIERTAS**\n"
-        f"📄 Página {page+1}/{total_pages}\n\n"
+        f"⏱️ **{kind} ABIERTAS**\n"
+        f"📄 Pág. {page+1}/{total_pages}\n\n"
         + "\n".join(lines)
     )
 
@@ -268,7 +268,7 @@ async def render_page(cb, kind, entities, page, page_size=3):
 
 
 # =========================
-# FLECHAS ⬅️ ➡️
+# FLECHAS ☝️ 👇
 # =========================
 @router.callback_query(F.data.startswith("page:"))
 async def change_page(cb: CallbackQuery):
