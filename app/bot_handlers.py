@@ -206,15 +206,7 @@ async def pick_kind(cb: CallbackQuery):
 @router.callback_query(F.data.startswith("mode:"))
 async def show_mode(cb: CallbackQuery):
     _, kind, mode = cb.data.split(":")
-
-    await safe_edit(
-        cb.message,
-        f"🔎 **{kind} · {mode}**\n\nElige vista:",
-        reply_markup=kb_view(kind, mode),
-        parse_mode="Markdown"
-    )
-    await cb.answer()
-   
+     
 @router.callback_query(F.data.startswith("view:"))
 async def show_view(cb: CallbackQuery):
     _, kind, mode, view = cb.data.split(":")
