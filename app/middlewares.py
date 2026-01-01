@@ -2,7 +2,7 @@ from typing import Callable, Awaitable, Dict, Any
 from aiogram.dispatcher.middlewares.base import BaseMiddleware
 from sqlalchemy.orm import Session
 
-from .db import SessionLocal
+from .database import SessionLocal
 
 
 class DBSessionMiddleware(BaseMiddleware):
