@@ -64,8 +64,11 @@ def fmt_money(x):
 BIG_AMOUNT = 1_000_000
 ALERT_DAYS = 7
 
-def build_summary(entities, max_entities=5, max_items_per_entity=3):
+def build_summary_page(entities, page, page_size=2):
     today = datetime.utcnow().date()
+
+    total_pages = (len(entities) + page_size - 1) // page_size
+    block = entities[page*page_size:(page+1)*page_size]
 
     lines = [
         "|✨🔦📸|**RESUMEN**|🧾🔥💡|\_________________"
@@ -106,7 +109,7 @@ def build_summary(entities, max_entities=5, max_items_per_entity=3):
                 f"⏱️ {published} ⏰ {deadline}{alert} · {money_icon} {money}"
             )
 
-        lines.append(f"📊 TOTAL: {fmt_money(total_entity)}\n")
+        lines.append(f"💶💴💵: {fmt_money(total_entity)}\n")
 
     lines.append("_________________/║**DETALLE**🫢😵✊║\_________________")
 
