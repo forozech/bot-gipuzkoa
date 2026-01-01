@@ -60,6 +60,60 @@ def fmt_money(x):
     if x is None:
         return "—"
     return f"{x:,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".")
+from datetime import datetime, timedelta
+
+BIG_AMOUNT = 1_000_000
+ALERT_DAYS = 7
+
+
+def build_summary(entities):
+    today = datetime.utcnow().date()
+
+    lines = [
+        "🟢🟢🟢 **ABIERTAS — RESUMEN RÁPIDO** 🟢🟢🟢\n"
+    ]
+
+    for entity, items in entities:
+        items_sorted = sorted(
+            items,
+            key=lambda x: x.get("deadlineDate") or "9999-12-31"
+        )
+
+        total_entity = 0.0
+        lines.append(f"🏛️ __**{entity.upper()}**__")
+
+        for it in items_sorted:
+            published = fmt_date(it.get("firstPublicationDate"))
+            deadline_raw = it.get("deadlineDate")
+            deadline = fmt_date(deadline_raw)
+
+            amount = it.get("budgetWithoutVAT")
+            money = fmt_money(amount)
+
+            if amount:
+                total_entity += amount
+
+            alert = ""
+            if deadline_raw:
+                try:
+                    d = datetime.fromisoformat(deadline_raw[:10]).date()
+                    if (d - today).days <= ALERT_DAYS:
+                        alert = " 🔴🔔"
+                except:
+                    pass
+
+            money_icon = "💎💰" if amount and amount >= BIG_AMOUNT else "💰"
+
+            lines.append(
+                f"📅 {published}  ⏰ {deadline}{alert}\n"
+                f"{money_icon} {money}"
+            )
+
+        lines.append(f"📊 **Total entidad:** {fmt_money(total_entity)}\n")
+
+    lines.append("━━━━━━━━━━━━━━━━━━\n👇 **DETALLE DE ANUNCIOS** 👇\n")
+
+    return "\n".join(lines)
 
 
 # =========================
