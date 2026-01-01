@@ -155,7 +155,7 @@ def kb_view(kind: str, mode: str):
     kb.adjust(2, 1)
     return kb.as_markup()
 
-def kb_pages(kind, page, total_pages):
+def kb_pages(kind_mode, page, total_pages):
     kb = InlineKeyboardBuilder()
     if page > 0:
         kb.button(text="◁", callback_data=f"page:{kind}:{page-1}")
