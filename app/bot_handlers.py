@@ -253,3 +253,19 @@ async def render_open_page(cb, kind, items, page, page_size):
         disable_web_page_preview=True
     )
     await cb.answer()
+
+@router.callback_query(F.data.startswith("page:"))
+async def paginate(cb: CallbackQuery):
+    _, kind, mode, page = cb.data.split(":")
+    page = int(page)
+
+    contract_type_id = 1 if kind == "OBRAS" else 2
+    cache_key = f"open:{contract_type_id}"
+    data = get_cache(cache_key)
+
+    if not data:
+        await cb.answer("Cache vacía, vuelve a entrar en ABIERTAS", show_alert=True)
+        return
+
+    items = data.get("items", [])
+    await render_open_page(cb, kind, items, page, page_size=5)
