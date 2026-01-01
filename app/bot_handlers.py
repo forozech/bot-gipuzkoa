@@ -2,6 +2,7 @@ from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.exceptions import TelegramBadRequest
+from datetime import datetime, timedelta
 
 from sqlalchemy.orm import Session
 import httpx
@@ -59,7 +60,6 @@ def fmt_money(x):
     if x is None:
         return "—"
     return f"{x:,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".")
-from datetime import datetime, timedelta
 
 BIG_AMOUNT = 1_000_000
 ALERT_DAYS = 7
@@ -230,7 +230,7 @@ async def render_page(cb, kind, entities, page, page_size=3):
 
     lines = []
 
-# 🔹 RESUMEN VISUAL SOLO EN LA PRIMERA PÁGINA
+    # 🔹 RESUMEN VISUAL SOLO EN LA PRIMERA PÁGINA
     if page == 0:
         lines.append(build_summary(entities))
 
