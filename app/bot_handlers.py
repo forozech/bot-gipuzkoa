@@ -155,16 +155,26 @@ def kb_view(kind: str, mode: str):
     kb.adjust(2, 1)
     return kb.as_markup()
 
-def kb_pages(kind_mode, page, total_pages):
+def kb_pages(kind: str, mode: str, page: int, total_pages: int):
     kb = InlineKeyboardBuilder()
+
     if page > 0:
-        kb.button(text="◁", callback_data=f"page:{kind}:{page-1}")
+        kb.button(
+            text="◁",
+            callback_data=f"page:{kind}:{mode}:{page-1}"
+        )
+
     if page < total_pages - 1:
-        kb.button(text="▷", callback_data=f"page:{kind}:{page+1}")
+        kb.button(
+            text="▷",
+            callback_data=f"page:{kind}:{mode}:{page+1}"
+        )
+
     kb.button(text="🚀", callback_data="home")
     kb.adjust(2, 1)
     return kb.as_markup()
-
+    
+    
 # =========================
 # START
 # =========================
@@ -270,7 +280,7 @@ async def show_view(cb: CallbackQuery):
         return
 
     # 🔍 DETALLE
-    await render_page(cb, kind, mode, entities, page=0)
+    async def render_page(cb, kind, mode, entities, page, page_size=2):
 
     await safe_edit(
         cb.message,
@@ -314,7 +324,7 @@ async def render_page(cb, kind, mode, entities, page, page_size=2):
         cb.message,
         text,
         parse_mode="Markdown",
-        reply_markup=kb_pages(f"{kind}:{mode}", page, total_pages),
+        reply_markup=kb_pages(kind, mode, page, total_pages),
         disable_web_page_preview=True
     )
     await cb.answer()
