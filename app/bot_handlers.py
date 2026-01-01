@@ -45,7 +45,7 @@ async def start_cmd(msg: Message):
 
 @router.callback_query(F.data == "home")
 async def home(cb: CallbackQuery):
-    await cb.message.edit_text("🏠 Menú principal:", reply_markup=kb_start())
+    await safe_edit(cb.message, "🏠 Menú principal:", reply_markup=kb_start())
     await cb.answer()
 
 @router.callback_query(F.data == "reset")
