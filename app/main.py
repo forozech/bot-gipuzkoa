@@ -2,6 +2,7 @@ import asyncio
 from fastapi import FastAPI
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
+from .middlewares import DbSessionMiddleware
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
@@ -17,6 +18,7 @@ Base.metadata.create_all(bind=engine)
 
 bot = Bot(token=settings.TELEGRAM_TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
+dp.update.middleware(DbSessionMiddleware())
 dp.include_router(router)
 
 scheduler = AsyncIOScheduler(timezone=settings.TZ)
