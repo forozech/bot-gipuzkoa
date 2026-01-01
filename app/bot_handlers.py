@@ -278,18 +278,9 @@ async def render_page(cb, kind, entities, page, page_size=2):
     total_pages = (len(entities) + page_size - 1) // page_size
     block = entities[page*page_size:(page+1)*page_size]
 
-    lines = []
-
-    # ✅ Resumen paginado
-    lines.append(build_summary_page(
-        entities,
-        summary_page=page,
-        summary_page_size=SUMMARY_PAGE_SIZE
-       ))
-
-          
-    counter = 1 + page * 50
-
+    lines = []      
+    counter = 1 + page * page_size
+    
     for entity, items in block:
         lines.append(f"__**{entity.upper()}**__\n")
 
