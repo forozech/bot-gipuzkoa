@@ -284,7 +284,7 @@ async def render_page(cb, kind, entities, page, page_size=2):
     for entity, items in block:
         lines.append(f"__**{entity.upper()}**__\n")
 
-        for it in items[:2]:
+        for it in items:
             lines.append(
                 f"{counter}️⃣ {it.get('object','(Sin título)')}\n"
                 f"⏱️ DESDE: {fmt_date(it.get('firstPublicationDate'))}\n"
@@ -295,7 +295,7 @@ async def render_page(cb, kind, entities, page, page_size=2):
             counter += 1
 
     text = (
-        f"⏱️ **{kind} ABIERTAS**\n"
+        f"🔍 **DETALLE {kind} · {mode}**\n"
         f"📄 Pág. {page+1}/{total_pages}\n\n"
         + "\n".join(lines)
     )
@@ -305,7 +305,7 @@ async def render_page(cb, kind, entities, page, page_size=2):
         cb.message,
         text,
         parse_mode="Markdown",
-        reply_markup=kb_pages(kind, page, total_pages),
+        reply_markup=kb_pages(f"{kind}:{mode}", page, total_pages),
         disable_web_page_preview=True
     )
     await cb.answer()
