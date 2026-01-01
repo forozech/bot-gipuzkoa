@@ -316,11 +316,14 @@ async def render_page(cb, kind, entities, page, page_size=2):
 # =========================
 @router.callback_query(F.data.startswith("page:"))
 async def change_page(cb: CallbackQuery):
-    _, kind, page = cb.data.split(":")
+    _, kind, mode, page = cb.data.split(":")
     page = int(page)
 
     contract_type_id = 1 if kind == "OBRAS" else 2
-    data = get_cache(f"open:{contract_type_id}")
+    status_id = 3 if mode == "OPEN" else 4
+    
+    cache_key = f"{mode}:{contract_type_id}"
+    data = get_cache(cache_key)
 
     if not data:
         await cb.answer("Recarga ABIERTAS", show_alert=True)
