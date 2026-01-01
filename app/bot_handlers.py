@@ -147,6 +147,13 @@ def kb_mode(kind: str):
     kb.adjust(2, 2)
     return kb.as_markup()
 
+def kb_view(kind: str, mode: str):
+    kb = InlineKeyboardBuilder()
+    kb.button(text="📋", callback_data=f"view:{kind}:{mode}:SUMMARY")
+    kb.button(text="🔍", callback_data=f"view:{kind}:{mode}:DETAIL")
+    kb.button(text="║🏫║", callback_data="home")
+    kb.adjust(2, 1)
+    return kb.as_markup()
 
 def kb_pages(kind, page, total_pages):
     kb = InlineKeyboardBuilder()
