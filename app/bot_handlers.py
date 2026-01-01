@@ -230,10 +230,10 @@ async def render_page(cb, kind, entities, page, page_size=3):
 
     lines = []
 
-    # 🔹 RESUMEN VISUAL SOLO EN LA PRIMERA PÁGINA
-    if page == 0:
-        lines.append(build_summary(entities))
-
+    summary_text, summary_pages = build_summary_page(entities, page)
+    lines.append(summary_text)
+    lines.append("_________________/║**DETALLE**🫢😵✊║\_________________")
+    
     counter = 1 + page * 50
 
     for entity, items in block:
