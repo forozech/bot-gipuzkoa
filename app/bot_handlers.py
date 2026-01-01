@@ -224,7 +224,6 @@ async def show_mode(cb: CallbackQuery):
         parse_mode="Markdown"
     )
     await cb.answer()
-
      
 @router.callback_query(F.data.startswith("view:"))
 async def show_view(cb: CallbackQuery):
@@ -281,15 +280,7 @@ async def show_view(cb: CallbackQuery):
 
     # 🔍 DETALLE
     async def render_page(cb, kind, mode, entities, page, page_size=2):
-
-    await safe_edit(
-        cb.message,
-        f"🔎 **{kind} · {mode}**\n\nElige vista:",
-        reply_markup=kb_view(kind, mode),
-        parse_mode="Markdown"
-    )
-    await cb.answer()
-        
+            
 # =========================
 # RENDER + PAGINACIÓN
 # =========================
