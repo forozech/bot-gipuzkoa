@@ -1,4 +1,7 @@
 from aiogram.exceptions import TelegramBadRequest
+import time
+from datetime import datetime
+import httpx
 
 async def safe_edit(message, text: str, **kwargs):
     try:
@@ -70,6 +73,57 @@ def format_money(x):
         return f"{x:,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".")
     except:
         return str(x)
+# =========================
+# CACHE SIMPLE EN MEMORIA
+# =========================
+CACHE = {}
+CACHE_TTL = 120  # segundos
+
+
+def get_cache(key):
+    item = CACHE.get(key)
+    if not item:
+        return None
+    ts, data = item
+    if time.time() - ts > CACHE_TTL:
+        CACHE.pop(key, None)
+        return None
+    return data
+
+
+def set_cache(key, data):
+    CACHE[key] = (time.time(), data)
+
+
+# =========================
+# FORMATEADORES
+# =========================
+def fmt_date(x):
+    if not x:
+        return "—"
+    try:
+        return datetime.fromisoformat(x[:10]).strftime("%d/%m/%Y")
+    except Exception:
+        return x
+
+
+def fmt_money(x):
+    if x is None:
+        return "—"
+    return f"{x:,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".")
+
+def kb_pagination(kind, mode, page, total_pages):
+    kb = InlineKeyboardBuilder()
+
+    if page > 0:
+        kb.button(text="⬅️", callback_data=f"page:{kind}:{mode}:{page-1}")
+
+    if page < total_pages - 1:
+        kb.button(text="➡️", callback_data=f"page:{kind}:{mode}:{page+1}")
+
+    kb.button(text="🏠 INICIO", callback_data="home")
+    kb.adjust(2, 1)
+    return kb.as_markup()
 
 @router.callback_query(F.data.startswith("mode:"))
 async def show_mode(cb: CallbackQuery, db: Session):
