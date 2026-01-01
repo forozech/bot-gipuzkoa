@@ -78,45 +78,71 @@ async def show_mode(cb: CallbackQuery, db: Session):
 
     contract_type_id = 1 if kind == "OBRAS" else 2
 
-    # =========================
-    # ABIERTAS (OBRAS o ING)
-    # =========================
-    if mode == "OPEN":
-        q = db.query(Notice).filter(
-            Notice.contract_type_id == contract_type_id,
-            Notice.procedure_status_id == 3,
-            Notice.last_publication_date >= "2025-10-01"
-        ).order_by(Notice.last_publication_date.desc())
-
-        analyzed = q.count()
-        items = q.limit(10).all()
-        cumplen = len(items)
-
-        lines = []
-        for n in items:
-            url = n.main_entity_of_page or "—"
-            title = n.object or "(Sin título)"
-            org = n.contracting_authority_name or "—"
-            last_date = n.last_publication_date or n.first_publication_date or "—"
-            budget = format_money(n.budget_without_vat)
-
-            lines.append(
-                f"🏷️ **{title}**\n"
-                f"🏛️ {org}\n"
-                f"📅 `{last_date}` | 💶 {budget}\n"
-                f"🔗 {url}"
-            )
-
-        text = (
-            f"🟢 **{kind} ABIERTAS**\n"
-            f"🕒 Última actualización BD: `{last_update}`\n"
-            f"📌 Anuncios analizados: **{analyzed}** | Mostrando: **{cumplen}**\n\n"
-            + ("\n\n———\n\n".join(lines) if lines else "No hay resultados en este momento.")
+# =========================
+# ABIERTAS (OBRAS o ING) → API DIRECTA
+# =========================
+if mode == "OPEN":
+    if contract_type_id == 1:  # OBRAS
+        url = (
+            "https://api.euskadi.eus/procurements/contracting-notices"
+            "?contract-type-id=1"
+            "&contract-procedure-status-id=3"
+            "&orderBy=lastPublicationDate"
+            "&orderType=DESC"
+            "&currentPage=1"
+            "&itemsOfPage=50"
+            "&lang=SPANISH"
+        )
+    else:  # ING (Servicios, sin CPV por ahora)
+        url = (
+            "https://api.euskadi.eus/procurements/contracting-notices"
+            "?contract-type-id=2"
+            "&contract-procedure-status-id=3"
+            "&orderBy=lastPublicationDate"
+            "&orderType=DESC"
+            "&currentPage=1"
+            "&itemsOfPage=50"
+            "&lang=SPANISH"
         )
 
-        await cb.message.edit_text(text, parse_mode="Markdown", reply_markup=kb_mode(kind))
-        await cb.answer()
-        return
+    import httpx
+    async with httpx.AsyncClient(timeout=20) as client:
+        r = await client.get(url)
+        data = r.json()
+
+    items = data.get("items", [])
+    analyzed = len(items)
+    items = items[:10]
+    cumplen = len(items)
+
+    lines = []
+    for it in items:
+        title = it.get("object") or "(Sin título)"
+        org = it.get("contractingAuthority", {}).get("name", "—")
+        last_date = it.get("lastPublicationDate") or it.get("firstPublicationDate") or "—"
+        url_item = it.get("mainEntityOfPage") or "—"
+
+        lines.append(
+            f"🏷️ **{title}**\n"
+            f"🏛️ {org}\n"
+            f"📅 `{last_date}`\n"
+            f"🔗 {url_item}"
+        )
+
+    text = (
+        f"🟢 **{kind} ABIERTAS**\n"
+        f"📌 Anuncios encontrados: **{analyzed}** | Mostrando: **{cumplen}**\n\n"
+        + ("\n\n———\n\n".join(lines) if lines else "No hay resultados en este momento.")
+    )
+
+    await cb.message.edit_text(
+        text,
+        parse_mode="Markdown",
+        reply_markup=kb_mode(kind),
+        disable_web_page_preview=True
+    )
+    await cb.answer()
+    return
 
     # =========================
     # CERRADAS (OBRAS o ING)
