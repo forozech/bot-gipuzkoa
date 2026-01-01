@@ -125,82 +125,49 @@ def kb_pagination(kind, mode, page, total_pages):
     kb.adjust(2, 1)
     return kb.as_markup()
 
+
 @router.callback_query(F.data.startswith("mode:"))
 async def show_mode(cb: CallbackQuery, db: Session):
     _, kind, mode = cb.data.split(":")
-    last_update = get_meta(db, "last_update_human", "—")
-
     contract_type_id = 1 if kind == "OBRAS" else 2
 
     # =========================
-    # ABIERTAS (OBRAS o ING) → API DIRECTA
+    # ABIERTAS → API + CACHE
     # =========================
     if mode == "OPEN":
-        if contract_type_id == 1:  # OBRAS
+        cache_key = f"open:{contract_type_id}"
+        data = get_cache(cache_key)
+
+        if not data:
             url = (
                 "https://api.euskadi.eus/procurements/contracting-notices"
-                "?contract-type-id=1"
+                f"?contract-type-id={contract_type_id}"
                 "&contract-procedure-status-id=3"
                 "&orderBy=lastPublicationDate"
                 "&orderType=DESC"
                 "&currentPage=1"
-                "&itemsOfPage=50"
-                "&lang=SPANISH"
-            )
-        else:  # ING
-            url = (
-                "https://api.euskadi.eus/procurements/contracting-notices"
-                "?contract-type-id=2"
-                "&contract-procedure-status-id=3"
-                "&orderBy=lastPublicationDate"
-                "&orderType=DESC"
-                "&currentPage=1"
-                "&itemsOfPage=50"
+                "&itemsOfPage=30"
                 "&lang=SPANISH"
             )
 
-        import httpx
-        async with httpx.AsyncClient(timeout=20) as client:
-            r = await client.get(url)
-            data = r.json()
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                r = await client.get(url)
+                data = r.json()
+
+            set_cache(cache_key, data)
 
         items = data.get("items", [])
-        analyzed = len(items)
-        items = items[:10]
-        cumplen = len(items)
+        page_size = 5
+        page = 0
 
-        lines = []
-        for it in items:
-            title = it.get("object") or "(Sin título)"
-            org = it.get("contractingAuthority", {}).get("name", "—")
-            last_date = it.get("lastPublicationDate") or it.get("firstPublicationDate") or "—"
-            url_item = it.get("mainEntityOfPage") or "—"
-
-            lines.append(
-                f"🏷️ **{title}**\n"
-                f"🏛️ {org}\n"
-                f"📅 `{last_date}`\n"
-                f"🔗 {url_item}"
-            )
-
-        text = (
-            f"🟢 **{kind} ABIERTAS**\n"
-            f"📌 Anuncios encontrados: **{analyzed}** | Mostrando: **{cumplen}**\n\n"
-            + ("\n\n———\n\n".join(lines) if lines else "No hay resultados en este momento.")
-        )
-
-        await cb.message.edit_text(
-            text,
-            parse_mode="Markdown",
-            reply_markup=kb_mode(kind),
-            disable_web_page_preview=True
-        )
-        await cb.answer()
+        await render_open_page(cb, kind, items, page, page_size)
         return
 
     # =========================
-    # CERRADAS (OBRAS o ING) → BD
+    # CERRADAS → BD (SIN TOCAR)
     # =========================
+    last_update = get_meta(db, "last_update_human", "—")
+
     q = db.query(Notice).filter(
         Notice.contract_type_id == contract_type_id,
         Notice.procedure_status_id != 3
@@ -223,22 +190,15 @@ async def show_mode(cb: CallbackQuery, db: Session):
         award = best.award_amount_without_vat
         baja = "—"
         if budget and award is not None and budget > 0:
-            baja_pct = (budget - award) / budget * 100.0
-            baja = f"{baja_pct:.2f}%".replace(".", ",")
-
-        last_date = n.last_publication_date or n.first_publication_date or "—"
-        plazo = best.months_contract_duration
-        plazo_txt = f"{plazo} meses" if plazo is not None else "—"
+            baja = f"{((budget - award) / budget * 100):.2f}%".replace(".", ",")
 
         results.append(
             f"🏷️ **{n.object or '(Sin título)'}**\n"
             f"🏛️ {n.contracting_authority_name or '—'}\n"
-            f"📅 `{last_date}`\n"
-            f"⏳ Plazo: **{plazo_txt}**\n"
-            f"💶 Inicial s/IVA: **{format_money(budget)}**\n"
-            f"✅ Contrato s/IVA: **{format_money(award)}**\n"
+            f"📅 `{n.last_publication_date or '—'}`\n"
+            f"💶 {fmt_money(budget)} → {fmt_money(award)}\n"
             f"📉 Baja: **{baja}**\n"
-            f"🔗 {n.main_entity_of_page or best.main_entity_of_page or '—'}"
+            f"🔗 {n.main_entity_of_page or '—'}"
         )
 
         if len(results) >= 10:
@@ -246,10 +206,9 @@ async def show_mode(cb: CallbackQuery, db: Session):
 
     text = (
         f"🔴 **{kind} CERRADAS**\n"
-        f"🕒 Última actualización BD: `{last_update}`\n"
-        f"📌 Anuncios analizados: **{analyzed}** | Cumplen filtro: **{len(results)}**\n\n"
-        + ("\n\n———\n\n".join(results) if results else "No he encontrado cerradas con datos completos.")
+        f"🕒 Última actualización BD: `{last_update}`\n\n"
+        + ("\n\n———\n\n".join(results) if results else "No hay resultados.")
     )
 
-    await cb.message.edit_text(text, parse_mode="Markdown", reply_markup=kb_mode(kind))
+    await safe_edit(cb.message, text, parse_mode="Markdown", reply_markup=kb_mode(kind))
     await cb.answer()
