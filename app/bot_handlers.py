@@ -78,79 +78,75 @@ async def show_mode(cb: CallbackQuery, db: Session):
 
     contract_type_id = 1 if kind == "OBRAS" else 2
 
-# =========================
-# ABIERTAS (OBRAS o ING) → API DIRECTA
-# =========================
-if mode == "OPEN":
-    if contract_type_id == 1:  # OBRAS
-        url = (
-            "https://api.euskadi.eus/procurements/contracting-notices"
-            "?contract-type-id=1"
-            "&contract-procedure-status-id=3"
-            "&orderBy=lastPublicationDate"
-            "&orderType=DESC"
-            "&currentPage=1"
-            "&itemsOfPage=50"
-            "&lang=SPANISH"
+    # =========================
+    # ABIERTAS (OBRAS o ING) → API DIRECTA
+    # =========================
+    if mode == "OPEN":
+        if contract_type_id == 1:  # OBRAS
+            url = (
+                "https://api.euskadi.eus/procurements/contracting-notices"
+                "?contract-type-id=1"
+                "&contract-procedure-status-id=3"
+                "&orderBy=lastPublicationDate"
+                "&orderType=DESC"
+                "&currentPage=1"
+                "&itemsOfPage=50"
+                "&lang=SPANISH"
+            )
+        else:  # ING
+            url = (
+                "https://api.euskadi.eus/procurements/contracting-notices"
+                "?contract-type-id=2"
+                "&contract-procedure-status-id=3"
+                "&orderBy=lastPublicationDate"
+                "&orderType=DESC"
+                "&currentPage=1"
+                "&itemsOfPage=50"
+                "&lang=SPANISH"
+            )
+
+        import httpx
+        async with httpx.AsyncClient(timeout=20) as client:
+            r = await client.get(url)
+            data = r.json()
+
+        items = data.get("items", [])
+        analyzed = len(items)
+        items = items[:10]
+        cumplen = len(items)
+
+        lines = []
+        for it in items:
+            title = it.get("object") or "(Sin título)"
+            org = it.get("contractingAuthority", {}).get("name", "—")
+            last_date = it.get("lastPublicationDate") or it.get("firstPublicationDate") or "—"
+            url_item = it.get("mainEntityOfPage") or "—"
+
+            lines.append(
+                f"🏷️ **{title}**\n"
+                f"🏛️ {org}\n"
+                f"📅 `{last_date}`\n"
+                f"🔗 {url_item}"
+            )
+
+        text = (
+            f"🟢 **{kind} ABIERTAS**\n"
+            f"📌 Anuncios encontrados: **{analyzed}** | Mostrando: **{cumplen}**\n\n"
+            + ("\n\n———\n\n".join(lines) if lines else "No hay resultados en este momento.")
         )
-    else:  # ING (Servicios, sin CPV por ahora)
-        url = (
-            "https://api.euskadi.eus/procurements/contracting-notices"
-            "?contract-type-id=2"
-            "&contract-procedure-status-id=3"
-            "&orderBy=lastPublicationDate"
-            "&orderType=DESC"
-            "&currentPage=1"
-            "&itemsOfPage=50"
-            "&lang=SPANISH"
+
+        await cb.message.edit_text(
+            text,
+            parse_mode="Markdown",
+            reply_markup=kb_mode(kind),
+            disable_web_page_preview=True
         )
-
-    import httpx
-    async with httpx.AsyncClient(timeout=20) as client:
-        r = await client.get(url)
-        data = r.json()
-
-    items = data.get("items", [])
-    analyzed = len(items)
-    items = items[:10]
-    cumplen = len(items)
-
-    lines = []
-    for it in items:
-        title = it.get("object") or "(Sin título)"
-        org = it.get("contractingAuthority", {}).get("name", "—")
-        last_date = it.get("lastPublicationDate") or it.get("firstPublicationDate") or "—"
-        url_item = it.get("mainEntityOfPage") or "—"
-
-        lines.append(
-            f"🏷️ **{title}**\n"
-            f"🏛️ {org}\n"
-            f"📅 `{last_date}`\n"
-            f"🔗 {url_item}"
-        )
-
-    text = (
-        f"🟢 **{kind} ABIERTAS**\n"
-        f"📌 Anuncios encontrados: **{analyzed}** | Mostrando: **{cumplen}**\n\n"
-        + ("\n\n———\n\n".join(lines) if lines else "No hay resultados en este momento.")
-    )
-
-    await cb.message.edit_text(
-        text,
-        parse_mode="Markdown",
-        reply_markup=kb_mode(kind),
-        disable_web_page_preview=True
-    )
-    await cb.answer()
-    return
+        await cb.answer()
+        return
 
     # =========================
-    # CERRADAS (OBRAS o ING)
-    # Para ING aquí podrías filtrar CPV 71/72 si lo quieres,
-    # pero como dijiste "por ahora solo ABIERTAS sin CPV",
-    # dejo CERRADAS como estaba: buscar contrato asociado con awardAmountWithoutVAT.
+    # CERRADAS (OBRAS o ING) → BD
     # =========================
-
     q = db.query(Notice).filter(
         Notice.contract_type_id == contract_type_id,
         Notice.procedure_status_id != 3
@@ -161,7 +157,6 @@ if mode == "OPEN":
 
     results = []
     for n in notices:
-        # contrato asociado con importes
         best = None
         for c in n.contracts:
             if c.award_amount_without_vat is not None:
@@ -181,40 +176,25 @@ if mode == "OPEN":
         plazo = best.months_contract_duration
         plazo_txt = f"{plazo} meses" if plazo is not None else "—"
 
-        results.append({
-            "title": n.object or "(Sin título)",
-            "org": n.contracting_authority_name or "—",
-            "last_date": last_date,
-            "plazo": plazo_txt,
-            "budget": format_money(budget),
-            "award": format_money(award),
-            "baja": baja,
-            "url": n.main_entity_of_page or best.main_entity_of_page or "—"
-        })
+        results.append(
+            f"🏷️ **{n.object or '(Sin título)'}**\n"
+            f"🏛️ {n.contracting_authority_name or '—'}\n"
+            f"📅 `{last_date}`\n"
+            f"⏳ Plazo: **{plazo_txt}**\n"
+            f"💶 Inicial s/IVA: **{format_money(budget)}**\n"
+            f"✅ Contrato s/IVA: **{format_money(award)}**\n"
+            f"📉 Baja: **{baja}**\n"
+            f"🔗 {n.main_entity_of_page or best.main_entity_of_page or '—'}"
+        )
 
         if len(results) >= 10:
             break
 
-    cumplen = len(results)
-
-    blocks = []
-    for r in results:
-        blocks.append(
-            f"🏷️ **{r['title']}**\n"
-            f"🏛️ {r['org']}\n"
-            f"📅 Últ. publicación: `{r['last_date']}`\n"
-            f"⏳ Plazo: **{r['plazo']}**\n"
-            f"💶 Inicial s/IVA: **{r['budget']}**\n"
-            f"✅ Contrato s/IVA: **{r['award']}**\n"
-            f"📉 Baja: **{r['baja']}**\n"
-            f"🔗 {r['url']}"
-        )
-
     text = (
         f"🔴 **{kind} CERRADAS**\n"
         f"🕒 Última actualización BD: `{last_update}`\n"
-        f"📌 Anuncios analizados: **{analyzed}** | Cumplen filtro: **{cumplen}**\n\n"
-        + ("\n\n———\n\n".join(blocks) if blocks else "No he encontrado cerradas con datos completos.")
+        f"📌 Anuncios analizados: **{analyzed}** | Cumplen filtro: **{len(results)}**\n\n"
+        + ("\n\n———\n\n".join(results) if results else "No he encontrado cerradas con datos completos.")
     )
 
     await cb.message.edit_text(text, parse_mode="Markdown", reply_markup=kb_mode(kind))
