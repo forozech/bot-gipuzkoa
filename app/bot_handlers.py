@@ -65,20 +65,21 @@ BIG_AMOUNT = 1_000_000
 ALERT_DAYS = 7
 MAX_ENTITIES_SUMMARY = 2
 MAX_ITEMS_PER_ENTITY = 3
+SUMMARY_PAGE_SIZE = 5
 
-
-def build_summary_page(entities, page, page_size):
+def build_summary_page(entities, summary_page, summary_page_size=5):
+    total_pages = (len(entities) + summary_page_size - 1) // summary_page_size
+    block = entities[
+        summary_page*summary_page_size :
+        (summary_page+1)*summary_page_size
+    ]
     today = datetime.utcnow().date()
-
-    total_pages = (len(entities) + page_size - 1) // page_size
-    block = entities[page*page_size:(page+1)*page_size]
 
     lines = [
     "━━━━━━━━━━━━━━━━━━━━",
-    "✨🔦**RESUMEN**🧾💡",
+    "🧾**RESUMEN**💡",
     "━━━━━━━━━━━━━━━━━━━━",
-    f"Pág. {page+1}/{total_pages}",
-]
+   ]
 
     for entity, items in block:
         items_sorted = sorted(
@@ -87,7 +88,7 @@ def build_summary_page(entities, page, page_size):
         )
 
         total_entity = 0.0
-        lines.append(f"🥸 **{entity.upper()}**")
+        lines.append(f"📜 **{entity.upper()}**")
 
         for it in items_sorted[:MAX_ITEMS_PER_ENTITY]:
             published = fmt_date(it.get("firstPublicationDate"))
@@ -109,18 +110,20 @@ def build_summary_page(entities, page, page_size):
                 except:
                     pass
 
-            money_icon = "💎💰" if amount and amount >= BIG_AMOUNT else "💰"
+            money_icon = " 💎 💵 " if amount and amount >= BIG_AMOUNT else "💵"
 
             lines.append(
                 f"⏱️ {published} ⏰ {deadline}{alert} · {money_icon} {money}"
             )
 
-        lines.append(f"💶💴💵: {fmt_money(total_entity)}\n")
+        lines.append(f"🏷️ 💰 💲 {fmt_money(total_entity)}💶 💴 💵")
 
     lines.append("\n━━━━━━━━━━━━━━━━━━━━")
-    lines.append("🧾 **DETALLE**🫢😵✊")
+    lines.append("🧾 **DETALLE**")
     lines.append("━━━━━━━━━━━━━━━━━━━━\n")
-   
+
+    lines.append("━━━━━━━━━━━━━━━━━━━━")
+    lines.append(f"📄 _Resumen · Página {page+1}/{total_pages}_")
     return "\n".join(lines)
 
 # =========================
@@ -130,17 +133,17 @@ def kb_start():
     kb = InlineKeyboardBuilder()
     kb.button(text="║👨‍🔧║", callback_data="pick:OBRAS")
     kb.button(text="║👩‍💻║", callback_data="pick:ING")
-    kb.button(text="║🔌║", callback_data="reset")
+    kb.button(text="║🚀║", callback_data="reset")
     kb.adjust(2, 1)
     return kb.as_markup()
 
 
 def kb_mode(kind: str):
     kb = InlineKeyboardBuilder()
-    kb.button(text="║⏱️ ABIERTAS║", callback_data=f"mode:{kind}:OPEN")
-    kb.button(text="║⏰ CERRADAS║", callback_data=f"mode:{kind}:CLOSED")
-    kb.button(text="║🚀 INICIO║", callback_data="home")
-    kb.button(text="║🏴‍☠️ RESET║", callback_data="reset")
+    kb.button(text="║⏱️║", callback_data=f"mode:{kind}:OPEN")
+    kb.button(text="║⏰║", callback_data=f"mode:{kind}:CLOSED")
+    kb.button(text="║🏫║", callback_data="home")
+    kb.button(text="║🚀║", callback_data="reset")
     kb.adjust(2, 2)
     return kb.as_markup()
 
@@ -155,14 +158,13 @@ def kb_pages(kind, page, total_pages):
     kb.adjust(2, 1)
     return kb.as_markup()
 
-
 # =========================
 # START
 # =========================
 @router.message(F.text == "/start")
 async def start_cmd(msg: Message):
     await msg.answer(
-        "║★ ☆ ✓ ✗ ∞ √ ∑ 🔥║",
+        "🍀OFERTAS",
         reply_markup=kb_start()
     )
 
@@ -239,7 +241,12 @@ async def render_page(cb, kind, entities, page, page_size=2):
     lines = []
 
     # ✅ Resumen paginado
-    lines.append(build_summary_page(entities, page, page_size))
+      lines.append(build_summary_page(
+        entities,
+        summary_page=page,
+        summary_page_size=SUMMARY_PAGE_SIZE
+       ))
+
           
     counter = 1 + page * 50
 
