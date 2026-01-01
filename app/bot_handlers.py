@@ -276,36 +276,7 @@ await safe_edit(
         parse_mode="Markdown"
     )
     await cb.answer()
-    
-    contract_type_id = 1 if kind == "OBRAS" else 2
-    cache_key = f"open:{contract_type_id}"
-    data = get_cache(cache_key)
-
-    if not data:
-        url = (
-            "https://api.euskadi.eus/procurements/contracting-notices"
-            f"?contract-type-id={contract_type_id}"
-            "&contract-procedure-status-id=3"
-            "&itemsOfPage=50"
-            "&lang=SPANISH"
-        )
-        async with httpx.AsyncClient(timeout=5) as client:
-            r = await client.get(url)
-            data = r.json()
-        set_cache(cache_key, data)
-
-    items = data.get("items", [])
-
-    # Agrupar por entidad
-    grouped = {}
-    for it in items:
-        ent = (it.get("entity") or {}).get("name", "OTROS")
-        grouped.setdefault(ent, []).append(it)
-
-    entities = sorted(grouped.items(), key=lambda x: x[0])
-    await render_page(cb, kind, entities, page=0)
-
-
+        
 # =========================
 # RENDER + PAGINACIÓN
 # =========================
