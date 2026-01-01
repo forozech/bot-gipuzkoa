@@ -117,7 +117,7 @@ def build_summary_page(entities, page, page_size=2):
         lines.append(f"💶💴💵: {fmt_money(total_entity)}\n")
 
     lines.append("\n━━━━━━━━━━━━━━━━━━━━")
-    lines.append("🧾**DETALLE DE ANUNCIOS**🫢😵✊")
+    lines.append("🧾 **DETALLE**🫢😵✊")
     lines.append("━━━━━━━━━━━━━━━━━━━━\n")
    
     return "\n".join(lines)
@@ -237,10 +237,9 @@ async def render_page(cb, kind, entities, page, page_size=2):
 
     lines = []
 
-    summary_text = build_summary_page(entities, page)
+    summary_text = build_summary_page(entities, page=0)
     lines.append(summary_text)
-    lines.append("_________________/║**DETALLE**🫢😵✊║\_________________")
-    
+        
     counter = 1 + page * 50
 
     for entity, items in block:
