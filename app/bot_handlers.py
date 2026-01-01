@@ -206,6 +206,15 @@ async def pick_kind(cb: CallbackQuery):
 @router.callback_query(F.data.startswith("mode:"))
 async def show_mode(cb: CallbackQuery):
     _, kind, mode = cb.data.split(":")
+
+    await safe_edit(
+        cb.message,
+        f"🔎 **{kind} · {mode}**\n\nElige vista:",
+        reply_markup=kb_view(kind, mode),
+        parse_mode="Markdown"
+    )
+    await cb.answer()
+
      
 @router.callback_query(F.data.startswith("view:"))
 async def show_view(cb: CallbackQuery):
@@ -263,7 +272,7 @@ async def show_view(cb: CallbackQuery):
     # 🔍 DETALLE
     await render_page(cb, kind, mode, entities, page=0)
 
-await safe_edit(
+    await safe_edit(
         cb.message,
         f"🔎 **{kind} · {mode}**\n\nElige vista:",
         reply_markup=kb_view(kind, mode),
@@ -274,7 +283,7 @@ await safe_edit(
 # =========================
 # RENDER + PAGINACIÓN
 # =========================
-async def render_page(cb, kind, entities, page, page_size=2):
+async def render_page(cb, kind, mode, entities, page, page_size=2):
     total_pages = (len(entities) + page_size - 1) // page_size
     block = entities[page*page_size:(page+1)*page_size]
 
