@@ -1,42 +1,77 @@
 import asyncio
+import logging
+import os
+
 from fastapi import FastAPI
 from aiogram import Bot, Dispatcher
-from aiogram.fsm.storage.memory import MemoryStorage
-from .middlewares import DbSessionMiddleware
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.cron import CronTrigger
+from aiogram.enums import ParseMode
 
-from .config import settings
-from .db import engine, SessionLocal
-from .models import Base
-from .updater import refresh_all
 from .bot_handlers import router
+from .middlewares import DBSessionMiddleware
+from .database import SessionLocal  # ajusta si tu archivo se llama distinto
 
-app = FastAPI()
 
-Base.metadata.create_all(bind=engine)
+# =========================
+# LOGGING
+# =========================
+logging.basicConfig(level=logging.INFO)
 
-bot = Bot(token=settings.TELEGRAM_TOKEN)
-dp = Dispatcher(storage=MemoryStorage())
-dp.update.middleware(DbSessionMiddleware())
+
+# =========================
+# FASTAPI APP
+# =========================
+app = FastAPI(title="Bot Gipuzkoa")
+
+
+@app.get("/")
+async def root():
+    """
+    Endpoint obligatorio para Render / UptimeRobot
+    """
+    return {
+        "status": "ok",
+        "service": "bot-gipuzkoa",
+        "bot": "running"
+    }
+
+
+# =========================
+# TELEGRAM BOT
+# =========================
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+if not BOT_TOKEN:
+    raise RuntimeError("BOT_TOKEN no definido")
+
+
+bot = Bot(
+    token=BOT_TOKEN,
+    parse_mode=ParseMode.MARKDOWN
+)
+
+dp = Dispatcher()
 dp.include_router(router)
 
-scheduler = AsyncIOScheduler(timezone=settings.TZ)
+# middleware DB
+dp.update.middleware(DBSessionMiddleware(SessionLocal))
 
-@app.get("/health")
-def health():
-    return {"ok": True}
 
-async def scheduled_refresh():
-    db = SessionLocal()
-    try:
-        await refresh_all(db)
-    finally:
-        db.close()
-
+# =========================
+# STARTUP / SHUTDOWN
+# =========================
 @app.on_event("startup")
-async def startup():
-    scheduler.add_job(scheduled_refresh, CronTrigger(hour=11, minute=0))
-    scheduler.add_job(scheduled_refresh, CronTrigger(hour=17, minute=0))
-    scheduler.start()
-    asyncio.create_task(dp.start_polling(bot))
+async def on_startup():
+    asyncio.create_task(start_bot())
+    logging.info("🚀 Bot iniciado")
+
+
+async def start_bot():
+    try:
+        await dp.start_polling(bot)
+    except Exception as e:
+        logging.exception("Error en polling del bot", exc_info=e)
+
+
+@app.on_event("shutdown")
+async def on_shutdown():
+    await bot.session.close()
+    logging.info("🛑 Bot detenido")
