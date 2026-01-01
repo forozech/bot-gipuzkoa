@@ -41,10 +41,15 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 if not BOT_TOKEN:
     raise RuntimeError("BOT_TOKEN no definido")
 
+from aiogram.client.default import DefaultBotProperties
+
 bot = Bot(
     token=BOT_TOKEN,
-    parse_mode=ParseMode.MARKDOWN
+    default=DefaultBotProperties(
+        parse_mode=ParseMode.MARKDOWN
+    )
 )
+
 
 dp = Dispatcher()
 dp.include_router(router)
