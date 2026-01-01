@@ -261,7 +261,7 @@ async def show_view(cb: CallbackQuery):
         return
 
     # 🔍 DETALLE
-    await render_page(cb, kind, entities, page=0)
+    await render_page(cb, kind, mode, entities, page=0)
 
 await safe_edit(
         cb.message,
