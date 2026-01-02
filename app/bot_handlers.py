@@ -29,6 +29,8 @@ async def safe_edit(message, text: str, **kwargs):
 # =========================
 CACHE = {}
 CACHE_TTL = 300  # 5 minutos
+SUMMARY_PAGE_SIZE = 4
+
 
 def get_cache(key):
     v = CACHE.get(key)
@@ -62,7 +64,14 @@ ALERT_DAYS = 7
 # =========================
 # RESUMEN (SIN LÍMITES)
 # =========================
-def build_summary(entities):
+def build_summary_page(entities, summary_page, summary_page_size=4):
+    total_pages = (len(entities) + summary_page_size - 1) // summary_page_size
+
+    block = entities[
+        summary_page * summary_page_size :
+        (summary_page + 1) * summary_page_size
+    ]
+
     today = datetime.utcnow().date()
 
     lines = [
@@ -71,7 +80,7 @@ def build_summary(entities):
         "━━━━━━━━━━━━━━━━━━━━",
     ]
 
-    for entity, items in entities:
+    for entity, items in block:
         lines.append(f"\n📜 **{entity.upper()}**")
         total = 0.0
 
@@ -107,7 +116,12 @@ def build_summary(entities):
 
         lines.append(f"🏷 TOTAL: {fmt_money(total)}")
 
-    return "\n".join(lines)
+    lines.append(
+        f"\n📄 _Resumen · Página {summary_page+1}/{total_pages}_"
+    )
+
+    return "\n".join(lines), total_pages
+
 
 # =========================
 # TECLADOS
@@ -149,6 +163,21 @@ def kb_pages(kind: str, mode: str, page: int, total_pages: int):
     kb.button(text="🚀", callback_data="home")
     kb.adjust(2, 1)
     return kb.as_markup()
+
+def kb_summary_pages(kind, mode, page, total_pages):
+    kb = InlineKeyboardBuilder()
+
+    if page > 0:
+        kb.button(text="◁", callback_data=f"summary:{kind}:{mode}:{page-1}")
+    if page < total_pages - 1:
+        kb.button(text="▷", callback_data=f"summary:{kind}:{mode}:{page+1}")
+
+    kb.button(text="🔍", callback_data=f"view:{kind}:{mode}:DETAIL")
+    kb.button(text="🏠", callback_data="home")
+    kb.adjust(2, 1)
+
+    return kb.as_markup()
+
 
 # =========================
 # START
@@ -197,6 +226,44 @@ async def show_mode(cb: CallbackQuery):
 # =========================
 # VISTAS
 # =========================
+
+@router.callback_query(F.data.startswith("summary:"))
+async def change_summary_page(cb: CallbackQuery):
+    _, kind, mode, page = cb.data.split(":")
+    page = int(page)
+
+    contract_type_id = 1 if kind == "OBRAS" else 2
+    status_id = 3 if mode == "OPEN" else 4
+
+    cache_key = f"{mode}:{contract_type_id}"
+    data = get_cache(cache_key)
+
+    if not data:
+        await cb.answer("Cache caducada", show_alert=True)
+        return
+
+    grouped = {}
+    for it in data.get("items", []):
+        ent = (it.get("entity") or {}).get("name", "OTROS")
+        grouped.setdefault(ent, []).append(it)
+
+    entities = sorted(grouped.items(), key=lambda x: x[0])
+
+    text, total_pages = build_summary_page(
+        entities,
+        summary_page=page,
+        summary_page_size=SUMMARY_PAGE_SIZE
+    )
+
+    await safe_edit(
+        cb.message,
+        f"📋 **RESUMEN {kind} · {mode}**\n\n{text}",
+        parse_mode="Markdown",
+        reply_markup=kb_summary_pages(kind, mode, page, total_pages),
+        disable_web_page_preview=True
+    )
+    await cb.answer()
+
 @router.callback_query(F.data.startswith("view:"))
 async def show_view(cb: CallbackQuery):
     _, kind, mode, view = cb.data.split(":")
@@ -231,25 +298,23 @@ async def show_view(cb: CallbackQuery):
 
     # 📋 RESUMEN
     if view == "SUMMARY":
-        text = (
-            f"📋 **RESUMEN {kind} · {mode}**\n\n"
-            + build_summary_page(
-                entities,
-                summary_page=0,
-                summary_page_size=SUMMARY_PAGE_SIZE
-            )
+        text, total_pages = build_summary_page(
+            entities,
+            summary_page=0,
+            summary_page_size=SUMMARY_PAGE_SIZE
         )
 
         await safe_edit(
             cb.message,
-            text,
+            f"📋 **RESUMEN {kind} · {mode}**\n\n{text}",
             parse_mode="Markdown",
-            reply_markup=kb_view(kind, mode),
+            reply_markup=kb_summary_pages(kind, mode, 0, total_pages),
             disable_web_page_preview=True
         )
         await cb.answer()
         return
 
+       
     # 🔍 DETALLE  ← ESTO FALTABA
     await render_page(cb, kind, mode, entities, page=0, page_size=2)
 
