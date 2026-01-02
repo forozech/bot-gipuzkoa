@@ -266,6 +266,20 @@ def setup_scheduler(bot):
         id="open_alert_17"
     )
 
+        scheduler.add_job(
+        check_open_contracts_today,
+        CronTrigger(hour=11, minute=0),
+        args=[bot],
+        id="open_today_11"
+    )
+
+    scheduler.add_job(
+        check_open_contracts_today,
+        CronTrigger(hour=17, minute=0),
+        args=[bot],
+        id="open_today_17"
+    )
+
     scheduler.start()
 
 def kb_start():
