@@ -3,6 +3,11 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.exceptions import TelegramBadRequest
 from datetime import datetime, timedelta
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
+import pytz
+import asyncio
+
 
 from sqlalchemy.orm import Session
 import httpx
@@ -44,6 +49,15 @@ def get_cache(key):
 
 def set_cache(key, data):
     CACHE[key] = (time.time(), data)
+    
+# =========================
+# AVISOS AUTOMÁTICOS ABIERTAS
+# =========================
+SEEN_OPEN_IDS = set()
+
+# 👉 pon aquí TU chat (puede ser grupo o privado)
+ALERT_CHAT_ID = -100XXXXXXXXXX  # <-- CAMBIA ESTO
+
 
 # =========================
 # FORMATOS
@@ -122,24 +136,92 @@ def build_summary_page(entities, summary_page, summary_page_size=4):
 
     return "\n".join(lines), total_pages
 
+async def check_new_open_contracts(bot):
+    url = (
+        "https://api.euskadi.eus/procurements/contracting-notices"
+        "?contract-type-id=1"
+        "&contract-procedure-status-id=3"
+        "&itemsOfPage=50"
+        "&lang=SPANISH"
+    )
+
+    async with httpx.AsyncClient(timeout=10) as client:
+        r = await client.get(url)
+        data = r.json()
+
+    items = data.get("items", [])
+    new_items = []
+
+    for it in items:
+        uid = it.get("id")
+        if not uid:
+            continue
+        if uid not in SEEN_OPEN_IDS:
+            SEEN_OPEN_IDS.add(uid)
+            new_items.append(it)
+
+    if not new_items:
+        return
+
+    lines = [
+        "🆕 **NUEVAS LICITACIONES ABIERTAS**",
+        ""
+    ]
+
+    for it in new_items[:5]:  # evita spam
+        lines.append(
+            f"• {it.get('object','(Sin título)')}\n"
+            f"  💰 {fmt_money(it.get('budgetWithoutVAT'))}\n"
+            f"  ⏰ {fmt_date(it.get('deadlineDate'))}"
+        )
+
+    await bot.send_message(
+        chat_id=ALERT_CHAT_ID,
+        text="\n".join(lines),
+        parse_mode="Markdown",
+        disable_web_page_preview=True
+    )
+
 
 # =========================
 # TECLADOS
 # =========================
+
+def setup_scheduler(bot):
+    scheduler = AsyncIOScheduler(
+        timezone=pytz.timezone("Europe/Madrid")
+    )
+
+    scheduler.add_job(
+        check_new_open_contracts,
+        CronTrigger(hour=11, minute=0),
+        args=[bot],
+        id="open_alert_11"
+    )
+
+    scheduler.add_job(
+        check_new_open_contracts,
+        CronTrigger(hour=17, minute=0),
+        args=[bot],
+        id="open_alert_17"
+    )
+
+    scheduler.start()
+
 def kb_start():
     kb = InlineKeyboardBuilder()
-    kb.button(text="║👨‍🔧║", callback_data="pick:OBRAS")
-    kb.button(text="║👩‍💻║", callback_data="pick:ING")
-    kb.button(text="║🚀║", callback_data="reset")
+    kb.button(text="👨‍🔧", callback_data="pick:OBRAS")
+    kb.button(text="👩‍💻", callback_data="pick:ING")
+    kb.button(text="🚀", callback_data="reset")
     kb.adjust(2, 1)
     return kb.as_markup()
 
 def kb_mode(kind: str):
     kb = InlineKeyboardBuilder()
-    kb.button(text="║⏱️║", callback_data=f"mode:{kind}:OPEN")
-    kb.button(text="║⏰║", callback_data=f"mode:{kind}:CLOSED")
-    kb.button(text="║🏫║", callback_data="home")
-    kb.button(text="║🚀║", callback_data="reset")
+    kb.button(text="⏱️", callback_data=f"mode:{kind}:OPEN")
+    kb.button(text="⏰", callback_data=f"mode:{kind}:CLOSED")
+    kb.button(text="🏫", callback_data="home")
+    kb.button(text="🚀", callback_data="reset")
     kb.adjust(2, 2)
     return kb.as_markup()
 
@@ -147,7 +229,7 @@ def kb_view(kind: str, mode: str):
     kb = InlineKeyboardBuilder()
     kb.button(text="📋", callback_data=f"view:{kind}:{mode}:SUMMARY")
     kb.button(text="🔍", callback_data=f"view:{kind}:{mode}:DETAIL")
-    kb.button(text="║🏫║", callback_data="home")
+    kb.button(text="🏫", callback_data="home")
     kb.adjust(2, 1)
     return kb.as_markup()
 
@@ -201,7 +283,7 @@ async def pick_kind(cb: CallbackQuery):
     kind = cb.data.split(":")[1]
     await safe_edit(
         cb.message,
-        f"‖👨‍🔧**{kind}**‖",
+        f"👨‍🔧**{kind}**",
         reply_markup=kb_mode(kind),
         parse_mode="Markdown"
     )
