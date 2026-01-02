@@ -24,13 +24,11 @@ async def safe_edit(message, text: str, **kwargs):
             return
         raise
 
-
 # =========================
 # CACHE EN MEMORIA
 # =========================
 CACHE = {}
 CACHE_TTL = 300  # 5 minutos
-
 
 def get_cache(key):
     v = CACHE.get(key)
@@ -42,10 +40,8 @@ def get_cache(key):
         return None
     return data
 
-
 def set_cache(key, data):
     CACHE[key] = (time.time(), data)
-
 
 # =========================
 # FORMATOS
@@ -55,7 +51,6 @@ def fmt_date(d):
         return "—"
     return datetime.fromisoformat(d[:10]).strftime("%d/%m/%Y")
 
-
 def fmt_money(x):
     if x is None:
         return "—"
@@ -63,67 +58,55 @@ def fmt_money(x):
 
 BIG_AMOUNT = 1_000_000
 ALERT_DAYS = 7
-MAX_ENTITIES_SUMMARY = 2
-MAX_ITEMS_PER_ENTITY = 3
-SUMMARY_PAGE_SIZE = 5
 
-def build_summary_page(entities, summary_page, summary_page_size=5):
-    total_pages = (len(entities) + summary_page_size - 1) // summary_page_size
-    block = entities[
-        summary_page*summary_page_size :
-        (summary_page+1)*summary_page_size
-    ]
+# =========================
+# RESUMEN (SIN LÍMITES)
+# =========================
+def build_summary(entities):
     today = datetime.utcnow().date()
 
     lines = [
-    "━━━━━━━━━━━━━━━━━━━━",
-    "🧾**RESUMEN**💡",
-    "━━━━━━━━━━━━━━━━━━━━",
-   ]
+        "━━━━━━━━━━━━━━━━━━━━",
+        "🧾 **RESUMEN**",
+        "━━━━━━━━━━━━━━━━━━━━",
+    ]
 
-    for entity, items in block:
+    for entity, items in entities:
+        lines.append(f"\n📜 **{entity.upper()}**")
+        total = 0.0
+
         items_sorted = sorted(
             items,
             key=lambda x: x.get("deadlineDate") or "9999-12-31"
         )
 
-        total_entity = 0.0
-        lines.append(f"📜 **{entity.upper()}**")
-
-        for it in items_sorted[:MAX_ITEMS_PER_ENTITY]:
+        for it in items_sorted:
             published = fmt_date(it.get("firstPublicationDate"))
             deadline_raw = it.get("deadlineDate")
             deadline = fmt_date(deadline_raw)
-
             amount = it.get("budgetWithoutVAT")
             money = fmt_money(amount)
 
             if amount:
-                total_entity += amount
+                total += amount
 
             alert = ""
             if deadline_raw:
                 try:
                     d = datetime.fromisoformat(deadline_raw[:10]).date()
                     if (d - today).days <= ALERT_DAYS:
-                        alert = " 👨‍💻❗"
-                except:
+                        alert = " ❗"
+                except Exception:
                     pass
 
-            money_icon = " 💎 💵 " if amount and amount >= BIG_AMOUNT else "💵"
+            icon = "💎" if amount and amount >= BIG_AMOUNT else "💵"
 
             lines.append(
-                f"⏱️ {published} ⏰ {deadline}{alert} · {money_icon} {money}"
+                f"⏱ {published} · ⏰ {deadline}{alert} · {icon} {money}"
             )
 
-        lines.append(f"🏷️ 💰 💲 {fmt_money(total_entity)}💶 💴 💵")
+        lines.append(f"🏷 TOTAL: {fmt_money(total)}")
 
-    lines.append("\n━━━━━━━━━━━━━━━━━━━━")
-    lines.append("🧾 **DETALLE**")
-    lines.append("━━━━━━━━━━━━━━━━━━━━\n")
-
-    lines.append("━━━━━━━━━━━━━━━━━━━━")
-    lines.append(f"📄 _Resumen · Página {summary_page+1}/{total_pages}_")
     return "\n".join(lines)
 
 # =========================
@@ -136,7 +119,6 @@ def kb_start():
     kb.button(text="║🚀║", callback_data="reset")
     kb.adjust(2, 1)
     return kb.as_markup()
-
 
 def kb_mode(kind: str):
     kb = InlineKeyboardBuilder()
@@ -159,44 +141,31 @@ def kb_pages(kind: str, mode: str, page: int, total_pages: int):
     kb = InlineKeyboardBuilder()
 
     if page > 0:
-        kb.button(
-            text="◁",
-            callback_data=f"page:{kind}:{mode}:{page-1}"
-        )
+        kb.button(text="◁", callback_data=f"page:{kind}:{mode}:{page-1}")
 
     if page < total_pages - 1:
-        kb.button(
-            text="▷",
-            callback_data=f"page:{kind}:{mode}:{page+1}"
-        )
+        kb.button(text="▷", callback_data=f"page:{kind}:{mode}:{page+1}")
 
     kb.button(text="🚀", callback_data="home")
     kb.adjust(2, 1)
     return kb.as_markup()
-    
-    
+
 # =========================
 # START
 # =========================
 @router.message(F.text == "/start")
 async def start_cmd(msg: Message):
-    await msg.answer(
-        "🍀OFERTAS",
-        reply_markup=kb_start()
-    )
-
+    await msg.answer("🍀OFERTAS", reply_markup=kb_start())
 
 @router.callback_query(F.data == "home")
 async def home(cb: CallbackQuery):
     await safe_edit(cb.message, "🏠 Menú principal:", reply_markup=kb_start())
     await cb.answer()
 
-
 @router.callback_query(F.data == "reset")
 async def reset(cb: CallbackQuery):
     await safe_edit(cb.message, "✅ Reset hecho:", reply_markup=kb_start())
     await cb.answer()
-
 
 @router.callback_query(F.data.startswith("pick:"))
 async def pick_kind(cb: CallbackQuery):
@@ -209,9 +178,8 @@ async def pick_kind(cb: CallbackQuery):
     )
     await cb.answer()
 
-
 # =========================
-# ABIERTAS → API DIRECTA
+# MODO
 # =========================
 @router.callback_query(F.data.startswith("mode:"))
 async def show_mode(cb: CallbackQuery):
@@ -224,13 +192,17 @@ async def show_mode(cb: CallbackQuery):
         parse_mode="Markdown"
     )
     await cb.answer()
-     
+
+
+# =========================
+# VISTAS
+# =========================
 @router.callback_query(F.data.startswith("view:"))
 async def show_view(cb: CallbackQuery):
     _, kind, mode, view = cb.data.split(":")
 
     contract_type_id = 1 if kind == "OBRAS" else 2
-    status_id = 3 if mode == "OPEN" else 4  # ajusta si Euskadi usa otro
+    status_id = 3 if mode == "OPEN" else 4
 
     cache_key = f"{mode}:{contract_type_id}"
     data = get_cache(cache_key)
@@ -278,18 +250,20 @@ async def show_view(cb: CallbackQuery):
         await cb.answer()
         return
 
-    # 🔍 DETALLE
-               
+    # 🔍 DETALLE  ← ESTO FALTABA
+    await render_page(cb, kind, mode, entities, page=0, page_size=2)
+
+
 # =========================
-# RENDER + PAGINACIÓN
+# RENDER DETALLE
 # =========================
 async def render_page(cb, kind, mode, entities, page, page_size=2):
     total_pages = (len(entities) + page_size - 1) // page_size
     block = entities[page*page_size:(page+1)*page_size]
 
-    lines = []      
+    lines = []
     counter = 1 + page * page_size
-    
+
     for entity, items in block:
         lines.append(f"__**{entity.upper()}**__\n")
 
@@ -309,7 +283,6 @@ async def render_page(cb, kind, mode, entities, page, page_size=2):
         + "\n".join(lines)
     )
 
-       
     await safe_edit(
         cb.message,
         text,
@@ -319,9 +292,8 @@ async def render_page(cb, kind, mode, entities, page, page_size=2):
     )
     await cb.answer()
 
-
 # =========================
-# FLECHAS ☝️ 👇
+# PAGINACIÓN
 # =========================
 @router.callback_query(F.data.startswith("page:"))
 async def change_page(cb: CallbackQuery):
@@ -330,7 +302,7 @@ async def change_page(cb: CallbackQuery):
 
     contract_type_id = 1 if kind == "OBRAS" else 2
     status_id = 3 if mode == "OPEN" else 4
-    
+
     cache_key = f"{mode}:{contract_type_id}"
     data = get_cache(cache_key)
 
@@ -340,9 +312,12 @@ async def change_page(cb: CallbackQuery):
 
     items = data["items"]
     grouped = {}
+
     for it in items:
         ent = (it.get("entity") or {}).get("name", "OTROS")
         grouped.setdefault(ent, []).append(it)
 
     entities = sorted(grouped.items(), key=lambda x: x[0])
-    await render_page(cb, kind, entities, page)
+
+    # 👇 AQUÍ ESTABA EL ERROR
+    await render_page(cb, kind, mode, entities, page, page_size=2)
