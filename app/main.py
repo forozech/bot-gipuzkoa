@@ -5,8 +5,9 @@ import os
 from fastapi import FastAPI
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
+from aiogram.types import Update
 
-from .bot_handlers import router
+from .bot_handlers import router, setup_scheduler
 from .middlewares import DBSessionMiddleware
 
 
@@ -50,7 +51,6 @@ bot = Bot(
     )
 )
 
-
 dp = Dispatcher()
 dp.include_router(router)
 
@@ -59,19 +59,30 @@ dp.update.middleware(DBSessionMiddleware())
 
 
 # =========================
+# WEBHOOK CONFIG
+# =========================
+WEBHOOK_PATH = "/webhook"
+WEBHOOK_URL = f"https://bot-gipuzkoa.onrender.com{WEBHOOK_PATH}"
+
+
+@app.post(WEBHOOK_PATH)
+async def telegram_webhook(update: dict):
+    telegram_update = Update.model_validate(update)
+    await dp.feed_update(bot, telegram_update)
+    return {"ok": True}
+
+
+# =========================
 # STARTUP / SHUTDOWN
 # =========================
 @app.on_event("startup")
 async def on_startup():
-    asyncio.create_task(start_bot())
-    logging.info("🚀 GO")
+    await bot.set_webhook(WEBHOOK_URL)
 
+    setup_scheduler(bot)
 
-async def start_bot():
-    try:
-        await dp.start_polling(bot)
-    except Exception:
-        logging.exception("Error en polling del bot")
+    logging.info("🚀 Bot iniciado con webhook")
+    logging.info("⏰ Avisos automáticos activos (11:00 y 17:00)")
 
 
 @app.on_event("shutdown")
