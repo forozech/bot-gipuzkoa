@@ -64,7 +64,7 @@ dp.update.middleware(DBSessionMiddleware())
 @app.on_event("startup")
 async def on_startup():
     asyncio.create_task(start_bot())
-    logging.info("🚀 Bot iniciado")
+    logging.info("🚀 GO")
 
 
 async def start_bot():
