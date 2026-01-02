@@ -70,7 +70,10 @@ async def telegram_webhook(update: dict):
     telegram_update = Update.model_validate(update)
     await dp.feed_update(bot, telegram_update)
     return {"ok": True}
-
+    
+@app.head("/")
+async def root_head():
+    return {}
 
 # =========================
 # STARTUP / SHUTDOWN
