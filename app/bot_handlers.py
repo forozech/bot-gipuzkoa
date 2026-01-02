@@ -473,4 +473,7 @@ from aiogram.types import Message
 
 @router.message()
 async def show_chat_id(msg: Message):
-    await msg.answer(f"CHAT_ID = {msg.chat.id}")
+    await msg.answer(
+        f"CHAT_ID = {msg.chat.id}",
+        parse_mode=None
+    )
