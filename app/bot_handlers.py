@@ -468,3 +468,9 @@ async def change_page(cb: CallbackQuery):
 
     # 👇 AQUÍ ESTABA EL ERROR
     await render_page(cb, kind, mode, entities, page, page_size=2)
+
+from aiogram.types import Message
+
+@router.message()
+async def show_chat_id(msg: Message):
+    await msg.answer(f"CHAT_ID = {msg.chat.id}")
