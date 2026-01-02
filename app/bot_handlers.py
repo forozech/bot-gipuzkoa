@@ -608,7 +608,7 @@ async def change_page(cb: CallbackQuery):
 
 from aiogram.types import Message
 
-@router.message()
+@router.message(F.text == "/chatid")
 async def show_chat_id(msg: Message):
     await msg.answer(
         f"CHAT_ID = {msg.chat.id}",
