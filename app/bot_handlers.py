@@ -614,8 +614,16 @@ async def show_chat_id(msg: Message):
         f"CHAT_ID = {msg.chat.id}",
         parse_mode=None
     )
+RUNNING_NOVEDADES = set()
 
 @router.message(F.text == "/novedades")
 async def novedades_cmd(msg: Message):
-    await msg.answer("🔎 Buscando novedades de hoy...")
-    await check_open_contracts_today(msg.bot, manual=True)
+    if msg.chat.id in RUNNING_NOVEDADES:
+        return
+
+    RUNNING_NOVEDADES.add(msg.chat.id)
+    try:
+        await msg.answer("🔎 Buscando novedades de hoy...")
+        await check_open_contracts_today(bot=msg.bot, chat_id=msg.chat.id)
+    finally:
+        RUNNING_NOVEDADES.discard(msg.chat.id)
