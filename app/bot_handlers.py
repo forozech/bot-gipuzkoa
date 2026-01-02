@@ -623,7 +623,6 @@ async def novedades_cmd(msg: Message):
 
     RUNNING_NOVEDADES.add(msg.chat.id)
     try:
-        await msg.answer("🔎 Buscando novedades de hoy...")
         await check_open_contracts_today(bot=msg.bot, chat_id=msg.chat.id)
     finally:
         RUNNING_NOVEDADES.discard(msg.chat.id)
