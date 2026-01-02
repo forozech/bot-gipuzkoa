@@ -183,6 +183,64 @@ async def check_new_open_contracts(bot):
         disable_web_page_preview=True
     )
 
+async def check_open_contracts_today(bot, manual: bool = False):
+    today = datetime.now(pytz.timezone("Europe/Madrid")).date()
+
+    url = (
+        "https://api.euskadi.eus/procurements/contracting-notices"
+        "?contract-type-id=1"
+        "&contract-procedure-status-id=3"
+        "&itemsOfPage=50"
+        "&lang=SPANISH"
+    )
+
+    async with httpx.AsyncClient(timeout=10) as client:
+        r = await client.get(url)
+        data = r.json()
+
+    items = data.get("items", [])
+    today_items = []
+
+    for it in items:
+        pub = it.get("firstPublicationDate")
+        if not pub:
+            continue
+
+        try:
+            pub_date = datetime.fromisoformat(pub[:10]).date()
+        except Exception:
+            continue
+
+        if pub_date == today:
+            today_items.append(it)
+
+    if not today_items:
+        if manual:
+            await bot.send_message(
+                chat_id=ALERT_CHAT_ID,
+                text="ℹ️ Hoy no hay nuevas licitaciones abiertas.",
+            )
+        return
+
+    lines = [
+        "🆕 **NOVEDADES DE HOY (ABIERTAS)**",
+        ""
+    ]
+
+    for it in today_items[:10]:
+        lines.append(
+            f"• {it.get('object','(Sin título)')}\n"
+            f"  💰 {fmt_money(it.get('budgetWithoutVAT'))}\n"
+            f"  ⏰ {fmt_date(it.get('deadlineDate'))}"
+        )
+
+    await bot.send_message(
+        chat_id=ALERT_CHAT_ID,
+        text="\n".join(lines),
+        parse_mode="Markdown",
+        disable_web_page_preview=True
+    )
+    
 async def check_open_contracts_today(bot):
     url = (
         "https://api.euskadi.eus/procurements/contracting-notices"
@@ -556,3 +614,8 @@ async def show_chat_id(msg: Message):
         f"CHAT_ID = {msg.chat.id}",
         parse_mode=None
     )
+
+@router.message(F.text == "/novedades")
+async def novedades_cmd(msg: Message):
+    await msg.answer("🔎 Buscando novedades de hoy...")
+    await check_open_contracts_today(msg.bot, manual=True)
