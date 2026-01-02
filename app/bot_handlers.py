@@ -240,67 +240,7 @@ async def check_open_contracts_today(bot, manual: bool = False):
         parse_mode="Markdown",
         disable_web_page_preview=True
     )
-    
-async def check_open_contracts_today(bot):
-    url = (
-        "https://api.euskadi.eus/procurements/contracting-notices"
-        "?contract-type-id=1"
-        "&contract-procedure-status-id=3"
-        "&itemsOfPage=50"
-        "&lang=SPANISH"
-    )
 
-    async with httpx.AsyncClient(timeout=10) as client:
-        r = await client.get(url)
-        data = r.json()
-
-    items = data.get("items", [])
-
-    now = datetime.now(timezone.utc)
-    today = now.date()
-
-    novedades = []
-
-    for it in items:
-        pub_raw = it.get("firstPublicationDate")
-        if not pub_raw:
-            continue
-
-        try:
-            pub_dt = datetime.fromisoformat(
-                pub_raw.replace("Z", "+00:00")
-            )
-        except Exception:
-            continue
-
-        if pub_dt.date() == today and pub_dt <= now:
-            novedades.append(it)
-
-    if not novedades:
-        await bot.send_message(
-            chat_id=ALERT_CHAT_ID,
-            text="ℹ️ No hay nuevas licitaciones abiertas hoy.",
-        )
-        return
-
-    lines = [
-        "🆕 **NOVEDADES ABIERTAS (HOY)**",
-        ""
-    ]
-
-    for it in novedades[:10]:
-        lines.append(
-            f"• {it.get('object','(Sin título)')}\n"
-            f"  💰 {fmt_money(it.get('budgetWithoutVAT'))}\n"
-            f"  ⏰ {fmt_date(it.get('deadlineDate'))}"
-        )
-
-    await bot.send_message(
-        chat_id=ALERT_CHAT_ID,
-        text="\n".join(lines),
-        parse_mode="Markdown",
-        disable_web_page_preview=True
-    )
 # =========================
 # TECLADOS
 # =========================
@@ -623,6 +563,9 @@ async def novedades_cmd(msg: Message):
 
     RUNNING_NOVEDADES.add(msg.chat.id)
     try:
-        await check_open_contracts_today(bot=msg.bot, chat_id=msg.chat.id)
+        await check_open_contracts_today(
+    bot=msg.bot,
+    manual=True
+)
     finally:
         RUNNING_NOVEDADES.discard(msg.chat.id)
