@@ -56,7 +56,7 @@ def set_cache(key, data):
 SEEN_OPEN_IDS = set()
 
 # 👉 pon aquí TU chat (puede ser grupo o privado)
-ALERT_CHAT_ID = None  # <-- CAMBIA ESTO
+ALERT_CHAT_ID = -1003637338441  # <-- CAMBIA ESTO
 
 
 # =========================
