@@ -7,6 +7,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 import pytz
 import asyncio
+from datetime import timezone
 
 
 from sqlalchemy.orm import Session
@@ -182,7 +183,66 @@ async def check_new_open_contracts(bot):
         disable_web_page_preview=True
     )
 
+async def check_open_contracts_today(bot):
+    url = (
+        "https://api.euskadi.eus/procurements/contracting-notices"
+        "?contract-type-id=1"
+        "&contract-procedure-status-id=3"
+        "&itemsOfPage=50"
+        "&lang=SPANISH"
+    )
 
+    async with httpx.AsyncClient(timeout=10) as client:
+        r = await client.get(url)
+        data = r.json()
+
+    items = data.get("items", [])
+
+    now = datetime.now(timezone.utc)
+    today = now.date()
+
+    novedades = []
+
+    for it in items:
+        pub_raw = it.get("firstPublicationDate")
+        if not pub_raw:
+            continue
+
+        try:
+            pub_dt = datetime.fromisoformat(
+                pub_raw.replace("Z", "+00:00")
+            )
+        except Exception:
+            continue
+
+        if pub_dt.date() == today and pub_dt <= now:
+            novedades.append(it)
+
+    if not novedades:
+        await bot.send_message(
+            chat_id=ALERT_CHAT_ID,
+            text="ℹ️ No hay nuevas licitaciones abiertas hoy.",
+        )
+        return
+
+    lines = [
+        "🆕 **NOVEDADES ABIERTAS (HOY)**",
+        ""
+    ]
+
+    for it in novedades[:10]:
+        lines.append(
+            f"• {it.get('object','(Sin título)')}\n"
+            f"  💰 {fmt_money(it.get('budgetWithoutVAT'))}\n"
+            f"  ⏰ {fmt_date(it.get('deadlineDate'))}"
+        )
+
+    await bot.send_message(
+        chat_id=ALERT_CHAT_ID,
+        text="\n".join(lines),
+        parse_mode="Markdown",
+        disable_web_page_preview=True
+    )
 # =========================
 # TECLADOS
 # =========================
@@ -288,6 +348,11 @@ async def pick_kind(cb: CallbackQuery):
         parse_mode="Markdown"
     )
     await cb.answer()
+
+@router.message(F.text == "/avisar")
+async def manual_alert(msg: Message):
+    await msg.answer("🔎 Buscando novedades de hoy…")
+    await check_open_contracts_today(msg.bot)
 
 # =========================
 # MODO
