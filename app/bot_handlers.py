@@ -454,14 +454,13 @@ async def render_page(cb, kind, mode, entities, page, page_size=2):
                 f"🔗 {it.get('mainEntityOfPage','—')}\n"
             )
             counter += 1
-
-    text = (
-        "━━━━━━━━━━━━━━━━━━━━\n".     
-        f"🔍 **DETALLE — {kind} — {mode}**\n"
-        "━━━━━━━━━━━━━━━━━━━━\n\n"
-        + "\n".join(lines)
-        + f"\n\n📄 _Página {page+1}/{total_pages}_"
-    )
+        text = (
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            + f"🔍 **DETALLE — {kind} — {mode}**\n"
+            + "━━━━━━━━━━━━━━━━━━━━\n\n"
+            + "\n".join(lines)
+            + f"\n\n📄 _Página {page+1}/{total_pages}_"
+        )
 
     if is_callback:
         await safe_edit(
