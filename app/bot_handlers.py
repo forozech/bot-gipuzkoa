@@ -215,28 +215,14 @@ def setup_scheduler(bot):
     )
 
     scheduler.add_job(
-        check_new_open_contracts,
-        CronTrigger(hour=11, minute=0),
-        args=[bot],
-        id="open_alert_11"
-    )
-
-    scheduler.add_job(
-        check_new_open_contracts,
-        CronTrigger(hour=17, minute=0),
-        args=[bot],
-        id="open_alert_17"
-    )
-
-    scheduler.add_job(
-        check_open_contracts_today,
+        send_open_contracts_today_short,
         CronTrigger(hour=11, minute=0),
         args=[bot],
         id="open_today_11"
     )
 
     scheduler.add_job(
-        check_open_contracts_today,
+        send_open_contracts_today_short,
         CronTrigger(hour=17, minute=0),
         args=[bot],
         id="open_today_17"
