@@ -527,7 +527,7 @@ async def novedades_cmd(msg: Message):
         items = await get_open_contracts_today()
 
         if not items:
-        await msg.answer("ℹ️ Hoy no hay nuevas licitaciones abiertas.")
+            await msg.answer("ℹ️ Hoy no hay nuevas licitaciones abiertas.")
             return
 
         grouped = {}
