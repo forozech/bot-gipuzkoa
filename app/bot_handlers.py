@@ -456,9 +456,11 @@ async def render_page(cb, kind, mode, entities, page, page_size=2):
             counter += 1
 
     text = (
-        f"🔍 **DETALLE {kind} · {mode}**\n"
-        f"📄 Pág. {page+1}/{total_pages}\n\n"
+        "━━━━━━━━━━━━━━━━━━━━\n".     
+        f"🔍 **DETALLE — {kind} — {mode}**\n"
+        "━━━━━━━━━━━━━━━━━━━━\n\n"
         + "\n".join(lines)
+        + f"\n\n📄 _Página {page+1}/{total_pages}_"
     )
 
     if is_callback:
