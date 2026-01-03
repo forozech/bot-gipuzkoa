@@ -172,7 +172,8 @@ async def send_open_contracts_today_short(bot):
     items = await get_open_contracts_today()
 
     if not items:
-    await msg.answer("ℹ️ Hoy no hay nuevas licitaciones abiertas.")
+        await msg.answer("ℹ️ Hoy no hay nuevas licitaciones abiertas.")
+        return
 
     grouped = {}
     for it in items:
