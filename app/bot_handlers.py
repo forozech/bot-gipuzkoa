@@ -184,7 +184,8 @@ async def send_open_contracts_today_short(bot):
         ""
     ]
 
-    for ent, its in grouped.items():
+    for ent in sorted(grouped):
+        its = grouped[ent]
         amounts = [
             fmt_money(it.get("budgetWithoutVAT"))
             for it in its
