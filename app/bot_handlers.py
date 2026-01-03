@@ -363,7 +363,7 @@ async def change_summary_page(cb: CallbackQuery):
 
     await safe_edit(
         cb.message,
-        f"📋 **RESUMEN {kind} · {mode}**\n\n{text}",
+        text,
         parse_mode="Markdown",
         reply_markup=kb_summary_pages(kind, mode, page, total_pages),
         disable_web_page_preview=True
@@ -412,7 +412,7 @@ async def show_view(cb: CallbackQuery):
 
         await safe_edit(
             cb.message,
-            f"📋 **RESUMEN {kind} · {mode}**\n\n{text}",
+            text,
             parse_mode="Markdown",
             reply_markup=kb_summary_pages(kind, mode, 0, total_pages),
             disable_web_page_preview=True
