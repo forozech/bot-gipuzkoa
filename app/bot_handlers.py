@@ -79,7 +79,7 @@ ALERT_DAYS = 7
 # =========================
 # RESUMEN (SIN LÍMITES)
 # =========================
-def build_summary_page(entities, summary_page, summary_page_size=4):
+def build_summary_page(entities, kind, mode, summary_page, summary_page_size=4):
     total_pages = (len(entities) + summary_page_size - 1) // summary_page_size
 
     block = entities[
@@ -91,7 +91,7 @@ def build_summary_page(entities, summary_page, summary_page_size=4):
 
     lines = [
         "━━━━━━━━━━━━━━━━━━━━",
-        "🧾 **RESUMEN**",
+        f"🧾 **RESUMEN — {kind} — {mode}**",
         "━━━━━━━━━━━━━━━━━━━━",
     ]
 
