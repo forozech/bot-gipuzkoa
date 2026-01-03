@@ -427,6 +427,9 @@ async def show_view(cb: CallbackQuery):
 # RENDER DETALLE
 # =========================
 async def render_page(cb, kind, mode, entities, page, page_size=2):
+    is_callback = hasattr(cb, "message")
+    message = cb.message if is_callback else cb
+
     total_pages = (len(entities) + page_size - 1) // page_size
     block = entities[page*page_size:(page+1)*page_size]
 
@@ -452,14 +455,23 @@ async def render_page(cb, kind, mode, entities, page, page_size=2):
         + "\n".join(lines)
     )
 
-    await safe_edit(
-        cb.message,
-        text,
-        parse_mode="Markdown",
-        reply_markup=kb_pages(kind, mode, page, total_pages),
-        disable_web_page_preview=True
-    )
-    await cb.answer()
+    if is_callback:
+        await safe_edit(
+            message,
+            text,
+            parse_mode="Markdown",
+            reply_markup=kb_pages(kind, mode, page, total_pages),
+            disable_web_page_preview=True
+        )
+        await cb.answer()
+    else:
+        await message.answer(
+            text,
+            parse_mode="Markdown",
+            reply_markup=kb_pages(kind, mode, page, total_pages),
+            disable_web_page_preview=True
+        )
+
 
 # =========================
 # PAGINACIÓN
