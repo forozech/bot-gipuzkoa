@@ -357,6 +357,8 @@ async def change_summary_page(cb: CallbackQuery):
 
     text, total_pages = build_summary_page(
         entities,
+        kind,
+        mode,
         summary_page=page,
         summary_page_size=SUMMARY_PAGE_SIZE
     )
@@ -406,6 +408,8 @@ async def show_view(cb: CallbackQuery):
     if view == "SUMMARY":
         text, total_pages = build_summary_page(
             entities,
+            kind,
+            mode,
             summary_page=0,
             summary_page_size=SUMMARY_PAGE_SIZE
         )
