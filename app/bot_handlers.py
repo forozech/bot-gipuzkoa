@@ -789,7 +789,7 @@ async def show_view(cb: CallbackQuery):
 # =========================
 # RENDER DETALLE
 # =========================
-async def render_page(cb, kind, mode, entities, page, page_size=2):
+async def render_page(cb, kind, mode, entities, page, page_size=2, ambito=None):
     is_callback = hasattr(cb, "message")
     message = cb.message if is_callback else cb
 
