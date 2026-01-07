@@ -120,11 +120,10 @@ BIG_AMOUNT = 1_000_000
 ALERT_DAYS = 7
 
 async def load_contracts(contrato, estado):
-    # Mapea contrato → API
     contract_type_id = {
         "OBR": 1,
         "SERV": 2,
-        "ING": 2,   # ING es SERV + filtro
+        "ING": 2,
     }[contrato]
 
     status_id = {
@@ -134,22 +133,41 @@ async def load_contracts(contrato, estado):
     }[estado]
 
     cache_key = f"{contrato}:{estado}"
-    data = get_cache(cache_key)
-    if data:
-        return data
+    cached = get_cache(cache_key)
+    if cached:
+        return cached
 
-    url = (
-        "https://api.euskadi.eus/procurements/contracting-notices"
-        f"?contract-type-id={contract_type_id}"
-        f"&contract-procedure-status-id={status_id}"
-        "&itemsOfPage=50"
-        "&lang=SPANISH"
-    )
+    all_items = []
+    page = 0
+    items_per_page = 50
 
-    async with httpx.AsyncClient(timeout=10) as client:
-        r = await client.get(url)
-        data = r.json()
+    async with httpx.AsyncClient(timeout=15) as client:
+        while True:
+            url = (
+                "https://api.euskadi.eus/procurements/contracting-notices"
+                f"?contract-type-id={contract_type_id}"
+                f"&contract-procedure-status-id={status_id}"
+                f"&itemsOfPage={items_per_page}"
+                f"&page={page}"
+                "&lang=SPANISH"
+            )
 
+            r = await client.get(url)
+            data = r.json()
+
+            items = data.get("items", [])
+            if not items:
+                break
+
+            all_items.extend(items)
+
+            # si la página viene incompleta, ya no hay más
+            if len(items) < items_per_page:
+                break
+
+            page += 1
+
+    data["items"] = all_items
     set_cache(cache_key, data)
     return data
 
