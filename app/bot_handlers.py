@@ -34,7 +34,7 @@ async def safe_edit(message, text: str, **kwargs):
 # CACHE EN MEMORIA
 # =========================
 CACHE = {}
-CACHE_TTL = 300  # 5 minutos
+CACHE_TTL = 900  # 15 minutos
 SUMMARY_PAGE_SIZE = 4
 
 
@@ -205,6 +205,31 @@ async def send_open_contracts_today_short(bot):
         parse_mode="Markdown",
         disable_web_page_preview=True
     )
+
+# =========================
+# NORMALIZACIÓN / CONSTANTES
+# =========================
+
+# Tipos de contrato
+K_OBRAS = "OBR"
+K_SERV  = "SERV"
+K_ING   = "ING"
+
+# Estados
+E_ABIERTAS = "ABI"
+E_EN_PLAZO = "PLZ"
+E_CERRADAS = "CER"
+
+# Ámbito
+A_GEN = "GEN"
+A_GIP = "GIP"
+
+# Vista
+V_RES = "RES"
+V_DET = "DET"
+
+def build_header(vista, contrato, ambito, estado):
+    return f"🧾 **{vista} · {contrato} · {ambito} · {estado}**"
 
 # =========================
 # TECLADOS
