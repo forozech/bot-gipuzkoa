@@ -314,13 +314,14 @@ def kb_start():
     kb.adjust(3, 1)
     return kb.as_markup()
 
-def kb_mode(kind: str):
+def kb_estado(contrato: str):
     kb = InlineKeyboardBuilder()
-    kb.button(text="⏱️", callback_data=f"mode:{kind}:OPEN")
-    kb.button(text="⏰", callback_data=f"mode:{kind}:CLOSED")
+    kb.button(text="⏱️", callback_data=f"e:{contrato}:ABI")
+    kb.button(text="⏰", callback_data=f"e:{contrato}:PLZ")
+    kb.button(text="🔒", callback_data=f"e:{contrato}:CER")
     kb.button(text="🏫", callback_data="home")
     kb.button(text="🚀", callback_data="reset")
-    kb.adjust(2, 2)
+    kb.adjust(3, 1)
     return kb.as_markup()
 
 def kb_view(kind: str, mode: str):
@@ -389,6 +390,18 @@ async def pick_contrato(cb: CallbackQuery):
         f"📂 **{contrato} — ESTADO**",
         parse_mode="Markdown",
         reply_markup=kb_estado(contrato)  # ⚠️ se crea en el paso 3
+    )
+    await cb.answer()
+
+@router.callback_query(F.data.startswith("e:"))
+async def pick_estado(cb: CallbackQuery):
+    _, contrato, estado = cb.data.split(":")
+
+    await safe_edit(
+        cb.message,
+        f"📊 **{contrato} — {estado} — ÁMBITO**",
+        parse_mode="Markdown",
+        reply_markup=kb_ambito(contrato, estado)  # se crea en el paso 4
     )
     await cb.answer()
 
