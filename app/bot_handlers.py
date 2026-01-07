@@ -307,10 +307,11 @@ def setup_scheduler(bot):
 
 def kb_start():
     kb = InlineKeyboardBuilder()
-    kb.button(text="👨‍🔧", callback_data="pick:OBRAS")
-    kb.button(text="👩‍💻", callback_data="pick:ING")
+    kb.button(text="👨‍🔧", callback_data="c:OBR")
+    kb.button(text="👩‍💻", callback_data="c:SERV")
+    kb.button(text="📐", callback_data="c:ING")
     kb.button(text="🚀", callback_data="reset")
-    kb.adjust(2, 1)
+    kb.adjust(3, 1)
     return kb.as_markup()
 
 def kb_mode(kind: str):
@@ -363,7 +364,11 @@ def kb_summary_pages(kind, mode, page, total_pages):
 # =========================
 @router.message(F.text == "/start")
 async def start_cmd(msg: Message):
-    await msg.answer("🍀OFERTAS", reply_markup=kb_start())
+    await msg.answer(
+        "💼 **CONTRATO**",
+        reply_markup=kb_start(),
+        parse_mode="Markdown"
+    )
 
 @router.callback_query(F.data == "home")
 async def home(cb: CallbackQuery):
@@ -373,6 +378,18 @@ async def home(cb: CallbackQuery):
 @router.callback_query(F.data == "reset")
 async def reset(cb: CallbackQuery):
     await safe_edit(cb.message, "✅ Reset hecho:", reply_markup=kb_start())
+    await cb.answer()
+
+    @router.callback_query(F.data.startswith("c:"))
+async def pick_contrato(cb: CallbackQuery):
+    contrato = cb.data.split(":")[1]
+
+    await safe_edit(
+        cb.message,
+        f"📂 **{contrato} — ESTADO**",
+        parse_mode="Markdown",
+        reply_markup=kb_estado(contrato)  # ⚠️ se crea en el paso 3
+    )
     await cb.answer()
 
 @router.callback_query(F.data.startswith("pick:"))
