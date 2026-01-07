@@ -824,7 +824,7 @@ async def render_page(cb, kind, mode, entities, page, page_size=2, ambito=None):
             message,
             text,
             parse_mode="Markdown",
-            reply_markup=kb_pages(kind, mode, page, total_pages),
+            reply_markup=kb_detalle_nav(kind, mode, ambito, page, total_pages),
             disable_web_page_preview=True
         )
         await cb.answer()
