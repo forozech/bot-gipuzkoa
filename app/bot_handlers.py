@@ -432,6 +432,26 @@ def kb_pages(kind: str, mode: str, page: int, total_pages: int):
     kb.adjust(2, 1)
     return kb.as_markup()
 
+def kb_detalle_nav(contrato, estado, ambito, page, total_pages):
+    kb = InlineKeyboardBuilder()
+
+    if page > 0:
+        kb.button(
+            text="◁",
+            callback_data=f"detpage:{contrato}:{estado}:{ambito}:{page-1}"
+        )
+    if page < total_pages - 1:
+        kb.button(
+            text="▷",
+            callback_data=f"detpage:{contrato}:{estado}:{ambito}:{page+1}"
+        )
+
+    kb.button(text="🏠", callback_data="home")
+    kb.button(text="🚀", callback_data="reset")
+
+    kb.adjust(2, 2)
+    return kb.as_markup()
+
 def kb_summary_pages(kind, mode, page, total_pages):
     kb = InlineKeyboardBuilder()
 
@@ -444,6 +464,28 @@ def kb_summary_pages(kind, mode, page, total_pages):
     kb.button(text="🏠", callback_data="home")
     kb.adjust(2, 1)
 
+    return kb.as_markup()
+
+def kb_resumen_nav(contrato, estado, ambito, page, total_pages):
+    kb = InlineKeyboardBuilder()
+
+    # navegación
+    if page > 0:
+        kb.button(
+            text="◁",
+            callback_data=f"respage:{contrato}:{estado}:{ambito}:{page-1}"
+        )
+    if page < total_pages - 1:
+        kb.button(
+            text="▷",
+            callback_data=f"respage:{contrato}:{estado}:{ambito}:{page+1}"
+        )
+
+    # acciones globales
+    kb.button(text="🏠", callback_data="home")
+    kb.button(text="🚀", callback_data="reset")
+
+    kb.adjust(2, 2)
     return kb.as_markup()
 
 
