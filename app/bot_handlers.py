@@ -632,6 +632,11 @@ async def render_page(cb, kind, mode, entities, page, page_size=2, ambito=None):
     message = cb.message if is_callback else cb
 
     total_pages = (len(entities) + page_size - 1) // page_size
+    if page < 0:
+        page = 0
+    elif page >= total_pages:
+        page = total_pages - 1
+
     block = entities[page*page_size:(page+1)*page_size]
 
     lines = []
