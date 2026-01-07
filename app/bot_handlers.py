@@ -699,8 +699,8 @@ async def novedades_cmd(msg: Message):
         # reutiliza tu render con flechas
         await render_page(
             cb=msg,
-            kind="OBRAS",
-            mode="OPEN",
+            kind="OBR",
+            mode="ABI",
             entities=entities,
             page=0,
             page_size=2
