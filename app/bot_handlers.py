@@ -666,49 +666,6 @@ async def change_det_page(cb: CallbackQuery):
     )
 
 # =========================
-# VISTAS
-# =========================
-
-# @router.callback_query(F.data.startswith("summary:"))
-async def change_summary_page(cb: CallbackQuery):
-    _, kind, mode, page = cb.data.split(":")
-    page = int(page)
-
-    contract_type_id = 1 if kind == "OBRAS" else 2
-    status_id = 3 if mode == "OPEN" else 4
-
-    cache_key = f"{mode}:{contract_type_id}"
-    data = get_cache(cache_key)
-
-    if not data:
-        await cb.answer("Cache caducada", show_alert=True)
-        return
-
-    grouped = {}
-    for it in data.get("items", []):
-        ent = (it.get("entity") or {}).get("name", "OTROS")
-        grouped.setdefault(ent, []).append(it)
-
-    entities = sorted(grouped.items(), key=lambda x: x[0])
-
-    text, total_pages = build_summary_page(
-        entities,
-        kind,
-        mode,
-        summary_page=page,
-        summary_page_size=SUMMARY_PAGE_SIZE
-    )
-
-    await safe_edit(
-        cb.message,
-        text,
-        parse_mode="Markdown",
-        reply_markup=kb_summary_pages(kind, mode, page, total_pages),
-        disable_web_page_preview=True
-    )
-    await cb.answer()
-
-# =========================
 # RENDER DETALLE
 # =========================
 async def render_page(cb, kind, mode, entities, page, page_size=2, ambito=None):
