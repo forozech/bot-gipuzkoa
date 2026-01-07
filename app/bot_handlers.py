@@ -597,6 +597,67 @@ async def pick_vista(cb: CallbackQuery):
         page_size=2
     )
 
+@router.callback_query(F.data.startswith("respage:"))
+async def change_res_page(cb: CallbackQuery):
+    _, contrato, estado, ambito, page = cb.data.split(":")
+    page = int(page)
+
+    header = build_header("RES", contrato, ambito, estado)
+
+    data = await load_contracts(contrato, estado)
+    items = data.get("items", [])
+
+    items = apply_filters(items, contrato, estado, ambito)
+    entities = group_and_sort(items)
+
+    if not entities:
+        await safe_edit(
+            cb.message,
+            f"{header}\n\nℹ️ No hay resultados.",
+            parse_mode="Markdown",
+            reply_markup=kb_resumen_nav(contrato, estado, ambito, 0, 1)
+        )
+        return
+
+    text, total_pages = build_summary_page(
+        entities,
+        contrato,
+        estado,
+        summary_page=page,
+        summary_page_size=SUMMARY_PAGE_SIZE
+    )
+
+    await safe_edit(
+        cb.message,
+        text,
+        parse_mode="Markdown",
+        reply_markup=kb_resumen_nav(
+            contrato, estado, ambito, page, total_pages
+        ),
+        disable_web_page_preview=True
+    )
+
+@router.callback_query(F.data.startswith("detpage:"))
+async def change_det_page(cb: CallbackQuery):
+    _, contrato, estado, ambito, page = cb.data.split(":")
+    page = int(page)
+
+    data = await load_contracts(contrato, estado)
+    items = data.get("items", [])
+
+    items = apply_filters(items, contrato, estado, ambito)
+    entities = group_and_sort(items)
+
+    await render_page(
+        cb,
+        kind=contrato,
+        mode=estado,
+        entities=entities,
+        page=page,
+        page_size=2,
+        ambito=ambito  # lo ajustamos abajo
+    )
+
 
 @router.callback_query(F.data.startswith("pick:"))
 async def pick_kind(cb: CallbackQuery):
