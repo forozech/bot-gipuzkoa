@@ -411,27 +411,6 @@ def kb_vista(contrato: str, estado: str, ambito: str):
     kb.adjust(2, 2)
     return kb.as_markup()
 
-def kb_view(kind: str, mode: str):
-    kb = InlineKeyboardBuilder()
-    kb.button(text="📋", callback_data=f"view:{kind}:{mode}:SUMMARY")
-    kb.button(text="🔍", callback_data=f"view:{kind}:{mode}:DETAIL")
-    kb.button(text="🏫", callback_data="home")
-    kb.adjust(2, 1)
-    return kb.as_markup()
-
-def kb_pages(kind: str, mode: str, page: int, total_pages: int):
-    kb = InlineKeyboardBuilder()
-
-    if page > 0:
-        kb.button(text="◁", callback_data=f"page:{kind}:{mode}:{page-1}")
-
-    if page < total_pages - 1:
-        kb.button(text="▷", callback_data=f"page:{kind}:{mode}:{page+1}")
-
-    kb.button(text="🚀", callback_data="home")
-    kb.adjust(2, 1)
-    return kb.as_markup()
-
 def kb_detalle_nav(contrato, estado, ambito, page, total_pages):
     kb = InlineKeyboardBuilder()
 
@@ -450,20 +429,6 @@ def kb_detalle_nav(contrato, estado, ambito, page, total_pages):
     kb.button(text="🚀", callback_data="reset")
 
     kb.adjust(2, 2)
-    return kb.as_markup()
-
-def kb_summary_pages(kind, mode, page, total_pages):
-    kb = InlineKeyboardBuilder()
-
-    if page > 0:
-        kb.button(text="◁", callback_data=f"summary:{kind}:{mode}:{page-1}")
-    if page < total_pages - 1:
-        kb.button(text="▷", callback_data=f"summary:{kind}:{mode}:{page+1}")
-
-    kb.button(text="🔍", callback_data=f"view:{kind}:{mode}:DETAIL")
-    kb.button(text="🏠", callback_data="home")
-    kb.adjust(2, 1)
-
     return kb.as_markup()
 
 def kb_resumen_nav(contrato, estado, ambito, page, total_pages):
