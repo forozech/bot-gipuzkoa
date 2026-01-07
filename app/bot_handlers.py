@@ -547,7 +547,7 @@ async def pick_vista(cb: CallbackQuery):
             cb.message,
             text,
             parse_mode="Markdown",
-            reply_markup=kb_summary_pages(contrato, estado, 0, total_pages),
+            reply_markup=kb_resumen_nav(contrato, estado, ambito, 0, total_pages),
             disable_web_page_preview=True
         )
         return
