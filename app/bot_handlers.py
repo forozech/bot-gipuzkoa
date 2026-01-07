@@ -8,14 +8,8 @@ from apscheduler.triggers.cron import CronTrigger
 import pytz
 import asyncio
 from datetime import timezone
-
-
-from sqlalchemy.orm import Session
 import httpx
 import time
-
-from .models import Notice
-from .updater import get_meta
 
 router = Router()
 
