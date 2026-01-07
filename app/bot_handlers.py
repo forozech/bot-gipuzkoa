@@ -380,7 +380,7 @@ async def reset(cb: CallbackQuery):
     await safe_edit(cb.message, "✅ Reset hecho:", reply_markup=kb_start())
     await cb.answer()
 
-    @router.callback_query(F.data.startswith("c:"))
+@router.callback_query(F.data.startswith("c:"))
 async def pick_contrato(cb: CallbackQuery):
     contrato = cb.data.split(":")[1]
 
