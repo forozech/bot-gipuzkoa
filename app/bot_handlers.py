@@ -602,8 +602,6 @@ async def change_res_page(cb: CallbackQuery):
     _, contrato, estado, ambito, page = cb.data.split(":")
     page = int(page)
 
-    header = build_header("RES", contrato, ambito, estado)
-
     data = await load_contracts(contrato, estado)
     items = data.get("items", [])
 
@@ -613,13 +611,21 @@ async def change_res_page(cb: CallbackQuery):
     if not entities:
         await safe_edit(
             cb.message,
-            f"{header}\n\nℹ️ No hay resultados.",
+            "ℹ️ No hay resultados.",
             parse_mode="Markdown",
             reply_markup=kb_resumen_nav(contrato, estado, ambito, 0, 1)
         )
         return
 
-    text, total_pages = build_summary_page(
+    total_pages = (len(entities) + SUMMARY_PAGE_SIZE - 1) // SUMMARY_PAGE_SIZE
+
+    # 🔒 CLAMP REAL (ESTO ES LA CLAVE)
+    if page < 0:
+        page = 0
+    elif page >= total_pages:
+        page = total_pages - 1
+
+    text, _ = build_summary_page(
         entities,
         contrato,
         estado,
@@ -636,6 +642,7 @@ async def change_res_page(cb: CallbackQuery):
         ),
         disable_web_page_preview=True
     )
+
 
 @router.callback_query(F.data.startswith("detpage:"))
 async def change_det_page(cb: CallbackQuery):
