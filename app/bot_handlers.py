@@ -507,10 +507,9 @@ async def pick_ambito(cb: CallbackQuery):
         cb.message,
         f"📑 **{contrato} — {estado} — {ambito} — VISTA**",
         parse_mode="Markdown",
-        reply_markup=kb_vista(contrato, estado, ambito)
+        reply_markup=kb_vista(contrato, estado, ambito)       
     )
-    # ❌ NO cb.answer()
-
+        await cb.answer()
 
 @router.callback_query(F.data.startswith("v:"))
 async def pick_vista(cb: CallbackQuery):
