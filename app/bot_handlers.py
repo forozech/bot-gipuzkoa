@@ -587,7 +587,7 @@ async def show_mode(cb: CallbackQuery):
 # VISTAS
 # =========================
 
-@router.callback_query(F.data.startswith("summary:"))
+# @router.callback_query(F.data.startswith("summary:"))
 async def change_summary_page(cb: CallbackQuery):
     _, kind, mode, page = cb.data.split(":")
     page = int(page)
@@ -626,7 +626,7 @@ async def change_summary_page(cb: CallbackQuery):
     )
     await cb.answer()
 
-@router.callback_query(F.data.startswith("view:"))
+# @router.callback_query(F.data.startswith("view:"))
 async def show_view(cb: CallbackQuery):
     _, kind, mode, view = cb.data.split(":")
 
@@ -737,7 +737,7 @@ async def render_page(cb, kind, mode, entities, page, page_size=2):
 # =========================
 # PAGINACIÓN
 # =========================
-@router.callback_query(F.data.startswith("page:"))
+# @router.callback_query(F.data.startswith("page:"))
 async def change_page(cb: CallbackQuery):
     _, kind, mode, page = cb.data.split(":")
     page = int(page)
