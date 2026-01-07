@@ -333,6 +333,15 @@ def kb_ambito(contrato: str, estado: str):
     kb.adjust(2, 2)
     return kb.as_markup()
 
+def kb_vista(contrato: str, estado: str, ambito: str):
+    kb = InlineKeyboardBuilder()
+    kb.button(text="📋", callback_data=f"v:{contrato}:{estado}:{ambito}:RES")
+    kb.button(text="🔍", callback_data=f"v:{contrato}:{estado}:{ambito}:DET")
+    kb.button(text="🏫", callback_data="home")
+    kb.button(text="🚀", callback_data="reset")
+    kb.adjust(2, 2)
+    return kb.as_markup()
+
 def kb_view(kind: str, mode: str):
     kb = InlineKeyboardBuilder()
     kb.button(text="📋", callback_data=f"view:{kind}:{mode}:SUMMARY")
@@ -423,6 +432,27 @@ async def pick_ambito(cb: CallbackQuery):
         f"📑 **{contrato} — {estado} — {ambito} — VISTA**",
         parse_mode="Markdown",
         reply_markup=kb_vista(contrato, estado, ambito)  # paso 5
+    )
+    await cb.answer()
+
+@router.callback_query(F.data.startswith("v:"))
+async def pick_vista(cb: CallbackQuery):
+    _, contrato, estado, ambito, vista = cb.data.split(":")
+
+    header = build_header(vista, contrato, ambito, estado)
+
+    # ⚠️ De momento SOLO texto de prueba
+    text = (
+        f"{header}\n\n"
+        "⚙️ Vista seleccionada correctamente.\n"
+        "En el siguiente paso conectaremos datos reales."
+    )
+
+    await safe_edit(
+        cb.message,
+        text,
+        parse_mode="Markdown",
+        reply_markup=kb_vista(contrato, estado, ambito)
     )
     await cb.answer()
 
