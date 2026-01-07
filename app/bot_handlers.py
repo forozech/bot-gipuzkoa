@@ -665,34 +665,6 @@ async def change_det_page(cb: CallbackQuery):
         ambito=ambito  # lo ajustamos abajo
     )
 
-
-@router.callback_query(F.data.startswith("pick:"))
-async def pick_kind(cb: CallbackQuery):
-    kind = cb.data.split(":")[1]
-    await safe_edit(
-        cb.message,
-        f"👨‍🔧**{kind}**",
-        reply_markup=kb_mode(kind),
-        parse_mode="Markdown"
-    )
-    await cb.answer()
-
-# =========================
-# MODO
-# =========================
-@router.callback_query(F.data.startswith("mode:"))
-async def show_mode(cb: CallbackQuery):
-    _, kind, mode = cb.data.split(":")
-
-    await safe_edit(
-        cb.message,
-        f"🔎 **{kind} · {mode}**\n\nElige vista:",
-        reply_markup=kb_view(kind, mode),
-        parse_mode="Markdown"
-    )
-    await cb.answer()
-
-
 # =========================
 # VISTAS
 # =========================
@@ -735,63 +707,6 @@ async def change_summary_page(cb: CallbackQuery):
         disable_web_page_preview=True
     )
     await cb.answer()
-
-# @router.callback_query(F.data.startswith("view:"))
-async def show_view(cb: CallbackQuery):
-    _, kind, mode, view = cb.data.split(":")
-
-    contract_type_id = 1 if kind == "OBRAS" else 2
-    status_id = 3 if mode == "OPEN" else 4
-
-    cache_key = f"{mode}:{contract_type_id}"
-    data = get_cache(cache_key)
-
-    if not data:
-        url = (
-            "https://api.euskadi.eus/procurements/contracting-notices"
-            f"?contract-type-id={contract_type_id}"
-            f"&contract-procedure-status-id={status_id}"
-            "&itemsOfPage=50"
-            "&lang=SPANISH"
-        )
-        async with httpx.AsyncClient(timeout=5) as client:
-            r = await client.get(url)
-            data = r.json()
-        set_cache(cache_key, data)
-
-    items = data.get("items", [])
-    grouped = {}
-
-    for it in items:
-        ent = (it.get("entity") or {}).get("name", "OTROS")
-        grouped.setdefault(ent, []).append(it)
-
-    entities = sorted(grouped.items(), key=lambda x: x[0])
-
-    # 📋 RESUMEN
-    if view == "SUMMARY":
-        text, total_pages = build_summary_page(
-            entities,
-            kind,
-            mode,
-            summary_page=0,
-            summary_page_size=SUMMARY_PAGE_SIZE
-        )
-
-        await safe_edit(
-            cb.message,
-            text,
-            parse_mode="Markdown",
-            reply_markup=kb_summary_pages(kind, mode, 0, total_pages),
-            disable_web_page_preview=True
-        )
-        await cb.answer()
-        return
-
-       
-    # 🔍 DETALLE  ← ESTO FALTABA
-    await render_page(cb, kind, mode, entities, page=0, page_size=2)
-
 
 # =========================
 # RENDER DETALLE
@@ -842,39 +757,6 @@ async def render_page(cb, kind, mode, entities, page, page_size=2, ambito=None):
             reply_markup=kb_pages(kind, mode, page, total_pages),
             disable_web_page_preview=True
         )
-
-
-# =========================
-# PAGINACIÓN
-# =========================
-# @router.callback_query(F.data.startswith("page:"))
-async def change_page(cb: CallbackQuery):
-    _, kind, mode, page = cb.data.split(":")
-    page = int(page)
-
-    contract_type_id = 1 if kind == "OBRAS" else 2
-    status_id = 3 if mode == "OPEN" else 4
-
-    cache_key = f"{mode}:{contract_type_id}"
-    data = get_cache(cache_key)
-
-    if not data:
-        await cb.answer("Recarga ABIERTAS", show_alert=True)
-        return
-
-    items = data["items"]
-    grouped = {}
-
-    for it in items:
-        ent = (it.get("entity") or {}).get("name", "OTROS")
-        grouped.setdefault(ent, []).append(it)
-
-    entities = sorted(grouped.items(), key=lambda x: x[0])
-
-    # 👇 AQUÍ ESTABA EL ERROR
-    await render_page(cb, kind, mode, entities, page, page_size=2)
-
-from aiogram.types import Message
 
 @router.message(F.text == "/chatid")
 async def show_chat_id(msg: Message):
