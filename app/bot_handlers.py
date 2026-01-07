@@ -125,6 +125,75 @@ def filter_en_plazo(items):
 BIG_AMOUNT = 1_000_000
 ALERT_DAYS = 7
 
+async def load_contracts(contrato, estado):
+    # Mapea contrato → API
+    contract_type_id = {
+        "OBR": 1,
+        "SERV": 2,
+        "ING": 2,   # ING es SERV + filtro
+    }[contrato]
+
+    status_id = {
+        "ABI": 3,
+        "PLZ": 3,
+        "CER": 4,
+    }[estado]
+
+    cache_key = f"{contrato}:{estado}"
+    data = get_cache(cache_key)
+    if data:
+        return data
+
+    url = (
+        "https://api.euskadi.eus/procurements/contracting-notices"
+        f"?contract-type-id={contract_type_id}"
+        f"&contract-procedure-status-id={status_id}"
+        "&itemsOfPage=50"
+        "&lang=SPANISH"
+    )
+
+    async with httpx.AsyncClient(timeout=10) as client:
+        r = await client.get(url)
+        data = r.json()
+
+    set_cache(cache_key, data)
+    return data
+
+def apply_filters(items, contrato, estado, ambito):
+    out = items
+
+    # EN PLAZO
+    if estado == "PLZ":
+        out = filter_en_plazo(out)
+
+    # GIPUZKOA
+    if ambito == "GIP":
+        out = [it for it in out if is_gipuzkoa(it)]
+
+    # INGENIERÍAS (solo SERV)
+    if contrato == "ING":
+        out = [it for it in out if is_ingenieria(it)]
+
+    return out
+
+def group_and_sort(items):
+    grouped = {}
+
+    for it in items:
+        ent = (it.get("entity") or {}).get("name", "OTROS")
+        grouped.setdefault(ent, []).append(it)
+
+    # ordena entidades y dentro por fecha límite
+    entities = []
+    for ent, its in grouped.items():
+        its_sorted = sorted(
+            its,
+            key=lambda x: x.get("deadlineDate") or "9999-12-31"
+        )
+        entities.append((ent, its_sorted))
+
+    return sorted(entities, key=lambda x: x[0])
+
 # =========================
 # RESUMEN (SIN LÍMITES)
 # =========================
@@ -442,20 +511,50 @@ async def pick_vista(cb: CallbackQuery):
 
     header = build_header(vista, contrato, ambito, estado)
 
-    # ⚠️ De momento SOLO texto de prueba
-    text = (
-        f"{header}\n\n"
-        "⚙️ Vista seleccionada correctamente.\n"
-        "En el siguiente paso conectaremos datos reales."
+    data = await load_contracts(contrato, estado)
+    items = data.get("items", [])
+
+    items = apply_filters(items, contrato, estado, ambito)
+    entities = group_and_sort(items)
+
+    if not entities:
+        await safe_edit(
+            cb.message,
+            f"{header}\n\nℹ️ No hay resultados.",
+            parse_mode="Markdown",
+            reply_markup=kb_vista(contrato, estado, ambito)
+        )
+        return
+
+    # RESUMEN
+    if vista == "RES":
+        text, total_pages = build_summary_page(
+            entities,
+            contrato,
+            estado,
+            summary_page=0,
+            summary_page_size=SUMMARY_PAGE_SIZE
+        )
+
+        await safe_edit(
+            cb.message,
+            text,
+            parse_mode="Markdown",
+            reply_markup=kb_summary_pages(contrato, estado, 0, total_pages),
+            disable_web_page_preview=True
+        )
+        return
+
+    # DETALLE
+    await render_page(
+        cb,
+        kind=contrato,
+        mode=estado,
+        entities=entities,
+        page=0,
+        page_size=2
     )
 
-    await safe_edit(
-        cb.message,
-        text,
-        parse_mode="Markdown",
-        reply_markup=kb_vista(contrato, estado, ambito)
-    )
-    await cb.answer()
 
 @router.callback_query(F.data.startswith("pick:"))
 async def pick_kind(cb: CallbackQuery):
