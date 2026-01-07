@@ -73,6 +73,55 @@ def fmt_money(x):
         return "—"
     return f"{x:,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".")
 
+# =========================
+# FILTRO ÁMBITO – GIPUZKOA
+# =========================
+
+GIP_KEYS = [
+    "GIPUZKOA", "GUIPÚZCOA", "GUIPUZCOA",
+    "AÑARBE", "TXINGUDI"
+]
+
+def is_gipuzkoa(it):
+    txt = (
+        (it.get("entity", {}) or {}).get("name", "") +
+        " " +
+        it.get("object", "")
+    ).upper()
+
+    return any(k in txt for k in GIP_KEYS)
+
+# =========================
+# FILTRO SERVICIOS – INGENIERÍAS
+# =========================
+
+ING_KEYS = [
+    "INGENIER", "ARQUITECT", "PROYECT",
+    "DIRECCIÓN DE OBRA", "DIRECCION DE OBRA",
+    "ASISTENCIA TÉCNICA"
+]
+
+def is_ingenieria(it):
+    txt = it.get("object", "").upper()
+    return any(k in txt for k in ING_KEYS)
+
+
+def filter_en_plazo(items):
+    today = datetime.utcnow().date()
+    out = []
+
+    for it in items:
+        d = it.get("deadlineDate")
+        if not d:
+            continue
+        try:
+            if datetime.fromisoformat(d[:10]).date() >= today:
+                out.append(it)
+        except Exception:
+            pass
+
+    return out
+
 BIG_AMOUNT = 1_000_000
 ALERT_DAYS = 7
 
