@@ -133,25 +133,30 @@ async def load_contracts(contrato, estado):
     items = []
 
     for e in feed.entries:
-        summary = e.get("summary", "")
+    text = ""
+    if e.get("content"):
+        text = e.content[0].value
+    elif e.get("summary"):
+        text = e.summary
 
-        item = {
-            "id": e.get("id") or e.get("link"),
-            "object": e.get("title", "").strip(),
-            "entity": {
-                "name": extract_entity(e)
-            },
-            "firstPublicationDate": (
-                datetime(*e.published_parsed[:6]).date().isoformat()
-                if getattr(e, "published_parsed", None)
-                else None
-            ),
-            "deadlineDate": extract_deadline(summary),
-            "budgetWithoutVAT": extract_budget(summary),
-            "mainEntityOfPage": e.get("link"),
-        }
+    item = {
+        "id": e.get("id") or e.get("link"),
+        "object": e.get("title", "").strip(),
+        "entity": {
+            "name": extract_entity(e)
+        },
+        "firstPublicationDate": (
+            datetime(*e.published_parsed[:6]).date().isoformat()
+            if getattr(e, "published_parsed", None)
+            else None
+        ),
+        "deadlineDate": extract_deadline(text),
+        "budgetWithoutVAT": extract_budget(text),
+        "mainEntityOfPage": e.get("link"),
+    }
 
-        items.append(item)
+    items.append(item)
+
 
     return {"items": items}
 
