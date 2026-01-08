@@ -67,7 +67,7 @@ from aiogram.client.default import DefaultBotProperties
 bot = Bot(
     token=BOT_TOKEN,
     default=DefaultBotProperties(
-        parse_mode=ParseMode.MARKDOWN
+        parse_mode=None
     )
 )
 
