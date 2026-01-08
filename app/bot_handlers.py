@@ -666,6 +666,9 @@ async def render_page(cb, kind, mode, entities, page, page_size=2, ambito=None):
     message = cb.message if is_callback else cb
 
     total_pages = (len(entities) + page_size - 1) // page_size
+    if total_pages <= 0:
+        total_pages = 1
+
     if page < 0:
         page = 0
     elif page >= total_pages:
@@ -680,21 +683,26 @@ async def render_page(cb, kind, mode, entities, page, page_size=2, ambito=None):
         lines.append(f"__**{entity.upper()}**__\n")
 
         for it in items:
+            url = get_notice_url(it)
+            link = f"🔗 {url}" if url else "🔗 —"
+
             lines.append(
                 f"{counter}️⃣ {it.get('object','(Sin título)')}\n"
                 f"⏱️ DESDE: {fmt_date(it.get('firstPublicationDate'))}\n"
                 f"⏰🖊 HASTA: {fmt_date(it.get('deadlineDate'))}\n"
                 f"💰 {fmt_money(it.get('budgetWithoutVAT'))}\n"
-                f"🔗 {url}" if url else "🔗 —"
+                f"{link}\n"
             )
             counter += 1
-        text = (
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            + f"🔍 **DETALLE — {kind} — {mode}**\n"
-            + "━━━━━━━━━━━━━━━━━━━━\n\n"
-            + "\n".join(lines)
-            + f"\n\n📄 _Página {page+1}/{total_pages}_"
-        )
+
+    # ✅ construir el texto UNA SOLA VEZ
+    text = (
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        + f"🔍 **DETALLE — {kind} — {mode}**\n"
+        + "━━━━━━━━━━━━━━━━━━━━\n\n"
+        + "\n".join(lines)
+        + f"\n\n📄 _Página {page+1}/{total_pages}_"
+    )
 
     if is_callback:
         await safe_edit(
@@ -705,7 +713,14 @@ async def render_page(cb, kind, mode, entities, page, page_size=2, ambito=None):
             disable_web_page_preview=True
         )
         await cb.answer()
-    
+    else:
+        await message.answer(
+            text,
+            parse_mode="Markdown",
+            reply_markup=kb_detalle_nav(kind, mode, ambito, page, total_pages),
+            disable_web_page_preview=True
+        )
+
 @router.message(F.text == "/chatid")
 async def show_chat_id(msg: Message):
     await msg.answer(
