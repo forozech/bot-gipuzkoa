@@ -3,15 +3,9 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.exceptions import TelegramBadRequest
 from datetime import datetime, timedelta
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.cron import CronTrigger
-import pytz
-import asyncio
-from datetime import timezone
 import time
 
 import unicodedata
-import re
 
 def normalize_text(s: str) -> str:
     if not s:
@@ -23,9 +17,7 @@ def normalize_text(s: str) -> str:
     return s
 
 router = Router()
-import feedparser
 import re
-from datetime import datetime
 
 # =========================
 # EXTRACCIONES DESDE RSS
