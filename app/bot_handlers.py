@@ -536,11 +536,18 @@ def kb_detalle_nav(contrato, estado, ambito, page, total_pages):
             callback_data=f"detpage:{contrato}:{estado}:{ambito}:{page+1}"
         )
 
+    # 📋 CAMBIO DE VISTA
+    kb.button(
+        text="📋 Resumen",
+        callback_data=f"v:{contrato}:{estado}:{ambito}:RES"
+    )
+
     kb.button(text="🏠", callback_data="home")
     kb.button(text="🚀", callback_data="reset")
 
     kb.adjust(2, 2)
     return kb.as_markup()
+
 
 def kb_resumen_nav(contrato, estado, ambito, page, total_pages):
     kb = InlineKeyboardBuilder()
