@@ -133,6 +133,12 @@ GIP_KEYS = [
 ]
 
 def is_gipuzkoa(it):
+    scope = normalize_text(
+        (it.get("contractingAuthority") or {}).get("scope", "")
+    )
+    if "GIPUZKOA" in scope:
+        return True
+
     txt = normalize_text(
         (it.get("entity", {}) or {}).get("name", "") + " " +
         it.get("object", "")
@@ -140,11 +146,12 @@ def is_gipuzkoa(it):
     return any(k in txt for k in GIP_KEYS)
 
 
+
 # =========================
 # FILTRO SERVICIOS – INGENIERÍAS
 # =========================
 
-ING_KEYS = [
+ING_POSITIVE = [
     # ingeniería general
     "INGENIER",
     "INGENIERIA",
@@ -178,10 +185,32 @@ ING_KEYS = [
     "CARRETERA",
     "CAMINO",
 ]
+ING_NEGATIVE = [
+    "LIMPIEZA",
+    "CARPINTERIA",
+    "VIGILANCIA",
+    "SEGURIDAD PRIVADA",
+    "ATENCION",
+    "CONTROL DE ACCESO",
+    "GESTION",
+    "EDUCATIVO",
+    "SOCIAL",
+    "CULTURAL",
+    "ESCENICA",
+    "MUSEO",
+    "ALUMNADO",
+]
 
 def is_ingenieria(it):
     txt = normalize_text(it.get("object", ""))
-    return any(k in txt for k in ING_KEYS)
+
+    if not any(k in txt for k in ING_POSITIVE):
+        return False
+
+    if any(k in txt for k in ING_NEGATIVE):
+        return False
+
+    return True
 
 
 
