@@ -122,9 +122,7 @@ async def load_contracts(contrato, estado):
     estado: ABI | PLZ | CER
     """
 
-    # Ingeniería es subconjunto de servicios
     rss_contrato = "SERV" if contrato == "ING" else contrato
-
     rss_estado = "ABI" if estado == "PLZ" else estado
     rss_url = RSS_URLS[(rss_contrato, rss_estado)]
 
@@ -133,30 +131,29 @@ async def load_contracts(contrato, estado):
     items = []
 
     for e in feed.entries:
-    text = ""
-    if e.get("content"):
-        text = e.content[0].value
-    elif e.get("summary"):
-        text = e.summary
+        text = ""
+        if e.get("content"):
+            text = e.content[0].value
+        elif e.get("summary"):
+            text = e.summary
 
-    item = {
-        "id": e.get("id") or e.get("link"),
-        "object": e.get("title", "").strip(),
-        "entity": {
-            "name": extract_entity(e)
-        },
-        "firstPublicationDate": (
-            datetime(*e.published_parsed[:6]).date().isoformat()
-            if getattr(e, "published_parsed", None)
-            else None
-        ),
-        "deadlineDate": extract_deadline(text),
-        "budgetWithoutVAT": extract_budget(text),
-        "mainEntityOfPage": e.get("link"),
-    }
+        item = {
+            "id": e.get("id") or e.get("link"),
+            "object": e.get("title", "").strip(),
+            "entity": {
+                "name": extract_entity(e)
+            },
+            "firstPublicationDate": (
+                datetime(*e.published_parsed[:6]).date().isoformat()
+                if getattr(e, "published_parsed", None)
+                else None
+            ),
+            "deadlineDate": extract_deadline(text),
+            "budgetWithoutVAT": extract_budget(text),
+            "mainEntityOfPage": e.get("link"),
+        }
 
-    items.append(item)
-
+        items.append(item)
 
     return {"items": items}
 
