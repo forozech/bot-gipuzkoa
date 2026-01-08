@@ -133,7 +133,11 @@ async def load_contracts(contrato, estado):
     rss_url = RSS_URLS[(rss_contrato, rss_estado)]
 
     feed = feedparser.parse(rss_url)
-
+        rss_url,
+        request_headers={
+            "User-Agent": "Mozilla/5.0 (compatible; OCGIPBOT/1.0)"
+        }
+    )
     items = []
 
     print(f"[RSS] {rss_url} -> {len(feed.entries)} entradas")
