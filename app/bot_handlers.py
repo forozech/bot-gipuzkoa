@@ -403,8 +403,8 @@ E_CERRADAS = "CER"
 V_RES = "RES"
 V_DET = "DET"
 
-def build_header(vista, contrato, ambito, estado):
-    return f"🧾 **{vista} · {contrato} · {ambito} · {estado}**"
+def build_header(vista, contrato, estado):
+    return f"🧾 **{vista} · {contrato} · {estado}**"
 
 # =========================
 # TECLADOS
