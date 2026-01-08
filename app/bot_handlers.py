@@ -199,6 +199,24 @@ async def load_contracts(contrato, estado):
     set_cache(cache_key, data)
     return data
 
+def apply_filters(items, contrato, estado, ambito):
+    out = items
+
+    # ⏰ EN PLAZO
+    if estado == "PLZ":
+        out = filter_en_plazo(out)
+
+    # 📍 GIPUZKOA
+    if ambito == "GIP":
+        out = [it for it in out if is_gipuzkoa(it)]
+
+    # 📐 INGENIERÍAS
+    if contrato == "ING":
+        out = [it for it in out if is_ingenieria(it)]
+
+    return out
+
+
 # =========================
 # RESUMEN (SIN LÍMITES)
 # =========================
