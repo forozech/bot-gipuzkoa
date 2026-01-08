@@ -535,9 +535,9 @@ async def pick_estado(cb: CallbackQuery):
 
     await safe_edit(
         cb.message,
-        f"📊 **{contrato} — {estado} — ÁMBITO**",
+        f"📊 **{contrato} — {estado} — VISTA**",
         parse_mode="Markdown",
-        reply_markup=kb_ambito(contrato, estado)  # se crea en el paso 4
+       reply_markup=kb_vista(contrato, estado)
     )
     await cb.answer()
 
