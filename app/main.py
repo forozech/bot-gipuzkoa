@@ -10,7 +10,6 @@ from aiogram.types import Update
 from .bot_handlers import router, setup_scheduler
 from .middlewares import DBSessionMiddleware
 
-asyncio.create_task(start_health_server())
 
 import asyncio
 from fastapi import FastAPI
