@@ -136,6 +136,8 @@ async def load_contracts(contrato, estado):
 
     items = []
 
+    print(f"[RSS] {rss_url} -> {len(feed.entries)} entradas")
+
     for e in feed.entries:
         text = ""
         if e.get("content"):
