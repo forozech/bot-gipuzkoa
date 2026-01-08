@@ -218,127 +218,6 @@ def get_notice_url(it):
     return None
 
 # =========================
-# FILTRO ÁMBITO – GIPUZKOA
-# =========================
-
-GIP_MUNICIPIOS = [
-    # territorio
-    "GIPUZKOA",
-    "GUIPUZCOA",
-
-    # comarcas / consorcios
-    "TXINGUDI",
-    "ANARBE",
-    "AÑARBE",
-    "BIDASOA",
-    "DEBABARRENA",
-    "DEBAGOIENA",
-    "SAN MARCOS",
-    "SAN MARKOS",
-
-    # capitales y ciudades
-    "DONOSTIA",
-    "SAN SEBASTIAN",
-    "IRUN",
-    "EIBAR",
-    "HERNANI",
-    "TOLOSA",
-    "ZARAUTZ",
-    "AZPEITIA",
-    "AZKOITIA",
-    "ARRASATE",
-    "MONDRAGON",
-    "DONOSTIA", "SAN SEBASTIAN",
-    "HERNANI",
-    "USURBIL",
-    "LASARTE ORIA", "LASARTE-ORIA",
-    "ASTIGARRAGA",
-    "ERRENTERIA", "RENTERIA",
-    "PASAIA", "PASAJES",
-    "LEZO",
-    "OIARTZUN",
-    "IRUN",
-    "HONDARRIBIA", "FUENTERRABIA",
-    "BIDASOA",
-    "TXINGUDI",
-    "ZARAUTZ",
-    "GETARIA",
-    "ZUMAIA", "ZUMAYA",
-    "AZPEITIA",
-    "AZKOITIA",
-    "AIZARNABAL",
-    "AIA",
-    "ERREZIL",
-    "TOLOSA",
-    "ANDOAIN",
-    "ADUNA",
-    "ALKIZA",
-    "ALTZO",
-    "AMEZKETA",
-    "ANOETA",
-    "BALIARRAIN",
-    "BERASTEGI",
-    "BIDEGOIAN", "BIDEGOYAN",
-    "ELDRAIN",
-    "GAZTELU",
-    "HERNIALDE",
-    "IKAZTEGIETA",
-    "IRURA",
-    "LIZARTZA",
-    "OREXA",
-    "ARRASATE", "MONDRAGON",
-    "ARETXABALETA",
-    "BERGARA",
-    "ELGETA",
-    "ESKORIATZA",
-    "LEINTZ GATZAGA", "SALINAS DE LENIZ",
-    "OÑATI", "ONATI",
-    "EIBAR",
-    "ELGOIBAR",
-    "MENDARO",
-    "DEBA",
-    "MUTRIKU", "MOTRICO",
-    "SORALUZE", "PLACENCIA DE LAS ARMAS",
-    "BEASAIN",
-    "ORDIZIA", "VILLAFRANCA DE ORIA",
-    "ZEGAMA",
-    "SEGURA",
-    "IDIAZABAL",
-    "LAZKAO",
-    "OLABERRIA",
-    "ZALDIBIA",
-    "ATAUN",
-    "GABIRIA",
-]
-
-def is_gipuzkoa(it):
-    # 1️⃣ NUTS en contractingAuthority.codNUTS
-    ca = it.get("contractingAuthority") or {}
-    if ca.get("codNUTS") == "ES212":
-        return True
-
-    # 2️⃣ NUTS en contractingAuthority.codNUTSList
-    nuts_list = ca.get("codNUTSList") or []
-    if "ES212" in nuts_list:
-        return True
-
-    # 3️⃣ NUTS en entity.codNUTS (muy común en ayuntamientos)
-    ent = it.get("entity") or {}
-    if ent.get("codNUTS") == "ES212":
-        return True
-
-    # 4️⃣ fallback por texto (solo si NO hay NUTS)
-    txt = normalize_text(
-        " ".join([
-            it.get("object", ""),
-            ent.get("name", ""),
-            ca.get("name", "")
-        ])
-    )
-    return any(m in txt for m in GIP_MUNICIPIOS)
-
-
-# =========================
 # FILTRO SERVICIOS – INGENIERÍAS
 # =========================
 
@@ -518,60 +397,6 @@ def build_summary_page(entities, kind, mode, summary_page, summary_page_size=4):
 
     return "\n".join(lines), total_pages
 
-async def get_open_contracts_today():
-    today = datetime.now(pytz.timezone("Europe/Madrid")).date()
-
-    url = (
-        "https://api.euskadi.eus/procurements/contracting-notices"
-        "?contract-type-id=1"
-        "&contract-procedure-status-id=3"
-        "&itemsOfPage=50"
-        "&lang=SPANISH"
-    )
-
-    async with httpx.AsyncClient(timeout=10) as client:
-        r = await client.get(url)
-        data = r.json()
-
-    items = data.get("items", [])
-    today_items = []
-
-    for it in items:
-        pub = it.get("firstPublicationDate")
-        if not pub:
-            continue
-        try:
-            pub_date = datetime.fromisoformat(pub[:10]).date()
-        except Exception:
-            continue
-        if pub_date == today:
-            today_items.append(it)
-
-    return today_items
-
-async def send_open_contracts_today_short(bot):
-    items = await get_open_contracts_today()
-
-    if not items:
-        return
-
-    grouped = {}
-    for it in items:
-        ent = (it.get("entity") or {}).get("name", "OTROS")
-        grouped.setdefault(ent, []).append(it)
-
-    lines = [
-        "🆕 **NOVEDADES DE HOY (ABIERTAS)**",
-        ""
-    ]
-
-    for ent in sorted(grouped):
-        its = grouped[ent]
-        amounts = [
-            fmt_money(it.get("budgetWithoutVAT"))
-            for it in its
-            if it.get("budgetWithoutVAT")
-        ]
 
         lines.append(
             f"🏛 **{ent}**: {len(its)} anuncio(s)\n"
@@ -616,26 +441,6 @@ def build_header(vista, contrato, ambito, estado):
 # TECLADOS
 # =========================
 
-def setup_scheduler(bot):
-    scheduler = AsyncIOScheduler(
-        timezone=pytz.timezone("Europe/Madrid")
-    )
-
-    scheduler.add_job(
-        send_open_contracts_today_short,
-        CronTrigger(hour=11, minute=0),
-        args=[bot],
-        id="open_today_11"
-    )
-
-    scheduler.add_job(
-        send_open_contracts_today_short,
-        CronTrigger(hour=17, minute=0),
-        args=[bot],
-        id="open_today_17"
-    )
-
-    scheduler.start()
 
 def kb_start():
     kb = InlineKeyboardBuilder()
@@ -978,37 +783,4 @@ async def show_chat_id(msg: Message):
     )
 RUNNING_NOVEDADES = set()
 
-@router.message(F.text == "/novedades")
-async def novedades_cmd(msg: Message):
-    if msg.chat.id in RUNNING_NOVEDADES:
-        return
 
-    RUNNING_NOVEDADES.add(msg.chat.id)
-    try:
-        await msg.answer("🔎 Buscando novedades de hoy...")
-
-        items = await get_open_contracts_today()
-
-        if not items:
-            await msg.answer("ℹ️ Hoy no hay nuevas licitaciones abiertas.")
-            return
-
-        grouped = {}
-        for it in items:
-            ent = (it.get("entity") or {}).get("name", "OTROS")
-            grouped.setdefault(ent, []).append(it)
-
-        entities = sorted(grouped.items(), key=lambda x: x[0])
-
-        # reutiliza tu render con flechas
-        await render_page(
-            cb=msg,
-            kind="OBR",
-            mode="ABI",
-            entities=entities,
-            page=0,
-            page_size=2
-        )
-
-    finally:
-        RUNNING_NOVEDADES.discard(msg.chat.id)
