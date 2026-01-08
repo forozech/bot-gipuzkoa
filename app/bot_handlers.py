@@ -302,78 +302,36 @@ def filter_en_plazo(items):
 BIG_AMOUNT = 1_000_000
 ALERT_DAYS = 7
 
+import feedparser
+
 async def load_contracts(contrato, estado):
-    contract_type_id = {
-        "OBR": 1,
-        "SERV": 2,
-        "ING": 2,
-    }[contrato]
+    key = (contrato if contrato != "ING" else "SERV", estado)
+    rss_url = RSS_URLS[key]
 
-    status_id = {
-        "ABI": 3,
-        "PLZ": 3,
-        "CER": 4,
-    }[estado]
+    feed = feedparser.parse(rss_url)
 
-    cache_key = f"{contrato}:{estado}"
-    cached = get_cache(cache_key)
-    if cached:
-        return cached
+    items = []
+    for e in feed.entries:
+        items.append({
+            "id": e.id,
+            "object": e.title,
+            "link": e.link,
+            "entity": e.get("author", ""),
+            "firstPublicationDate": e.published,
+            "deadlineDate": extract_deadline(e.summary),
+            "budgetWithoutVAT": extract_budget(e.summary),
+        })
 
-    all_items = []
-    seen_ids = set()
-    current_page = 1
-    items_per_page = 50
+    return {"items": items}
 
-    async with httpx.AsyncClient(timeout=15) as client:
-        while True:
-            url = (
-                "https://api.euskadi.eus/procurements/contracting-notices"
-                f"?contract-type-id={contract_type_id}"
-                f"&contract-procedure-status-id={status_id}"
-                f"&orderBy=lastPublicationDate"
-                f"&orderType=DESC"
-                f"&currentPage={current_page}"
-                f"&itemsOfPage={items_per_page}"
-                "&lang=SPANISH"
-            )
-
-            r = await client.get(url)
-            data = r.json()
-            items = data.get("items", [])
-
-            if not items:
-                break
-
-            for it in items:
-                k = it.get("id")
-                if k not in seen_ids:
-                    seen_ids.add(k)
-                    all_items.append(it)
-
-            if len(items) < items_per_page:
-                break
-
-            current_page += 1
-
-    data["items"] = all_items
-    set_cache(cache_key, data)
-    return data
-
-def apply_filters(items, contrato, estado, ambito):
+def apply_filters(items, contrato, estado):
     out = items
 
-    # ⏰ EN PLAZO
     if estado == "PLZ":
         out = filter_en_plazo(out)
 
-    # 📐 INGENIERÍA (subconjunto de SERV)
     if contrato == "ING":
         out = [it for it in out if is_ingenieria(it)]
-
-    # 📍 GIPUZKOA
-    if ambito == "GIP":
-        out = [it for it in out if is_gipuzkoa(it)]
 
     return out
 
