@@ -4,8 +4,9 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.exceptions import TelegramBadRequest
 from datetime import datetime, timedelta
 import time
-
+import re
 import unicodedata
+import feedparser
 
 def normalize_text(s: str) -> str:
     if not s:
@@ -17,7 +18,7 @@ def normalize_text(s: str) -> str:
     return s
 
 router = Router()
-import re
+
 
 # =========================
 # EXTRACCIONES DESDE RSS
