@@ -10,6 +10,7 @@ from aiogram.types import Update
 from .bot_handlers import router, setup_scheduler
 from .middlewares import DBSessionMiddleware
 
+asyncio.create_task(start_health_server())
 
 # =========================
 # LOGGING
@@ -92,3 +93,14 @@ async def on_startup():
 async def on_shutdown():
     await bot.session.close()
     logging.info("🛑 Bot detenido")
+
+async def start_health_server():
+    config = uvicorn.Config(
+        app,
+        host="0.0.0.0",
+        port=8000,
+        log_level="warning"
+    )
+    server = uvicorn.Server(config)
+    await server.serve()
+
