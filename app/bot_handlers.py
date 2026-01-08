@@ -198,7 +198,6 @@ async def load_contracts(contrato, estado):
     data["items"] = all_items
     set_cache(cache_key, data)
     return data
-)
 
 # =========================
 # RESUMEN (SIN LÍMITES)
