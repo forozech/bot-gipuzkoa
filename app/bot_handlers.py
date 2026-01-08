@@ -291,8 +291,6 @@ def filter_en_plazo(items):
 BIG_AMOUNT = 1_000_000
 ALERT_DAYS = 7
 
-import feedparser
-
 def apply_filters(items, contrato, estado):
     out = items
 
