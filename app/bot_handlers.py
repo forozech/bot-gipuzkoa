@@ -544,7 +544,7 @@ async def pick_estado(cb: CallbackQuery):
 
 @router.callback_query(F.data.startswith("v:"))
 async def pick_vista(cb: CallbackQuery):
-    _, contrato, estado, ambito, vista = cb.data.split(":")
+    _, contrato, estado, vista = cb.data.split(":")
 
     header = build_header(vista, contrato, ambito, estado)
 
