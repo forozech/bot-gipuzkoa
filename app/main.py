@@ -12,6 +12,26 @@ from .middlewares import DBSessionMiddleware
 
 asyncio.create_task(start_health_server())
 
+import asyncio
+from fastapi import FastAPI
+import uvicorn
+
+health_app = FastAPI()
+
+@health_app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+async def start_health_server():
+    config = uvicorn.Config(
+        health_app,
+        host="0.0.0.0",
+        port=8000,
+        log_level="warning"
+    )
+    server = uvicorn.Server(config)
+    await server.serve()
+
 # =========================
 # LOGGING
 # =========================
