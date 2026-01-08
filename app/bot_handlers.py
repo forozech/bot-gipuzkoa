@@ -557,12 +557,19 @@ def kb_resumen_nav(contrato, estado, ambito, page, total_pages):
             callback_data=f"respage:{contrato}:{estado}:{ambito}:{page+1}"
         )
 
+    # 🔍 CAMBIO DE VISTA
+    kb.button(
+        text="🔍 Detalle",
+        callback_data=f"v:{contrato}:{estado}:{ambito}:DET"
+    )
+
     # acciones globales
     kb.button(text="🏠", callback_data="home")
     kb.button(text="🚀", callback_data="reset")
 
     kb.adjust(2, 2)
     return kb.as_markup()
+
 
 
 # =========================
