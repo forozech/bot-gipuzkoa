@@ -11,6 +11,18 @@ from datetime import timezone
 import httpx
 import time
 
+import unicodedata
+import re
+
+def normalize_text(s: str) -> str:
+    if not s:
+        return ""
+    s = unicodedata.normalize("NFD", s)
+    s = "".join(c for c in s if unicodedata.category(c) != "Mn")
+    s = s.upper()
+    s = re.sub(r"[^A-Z0-9 ]+", " ", s)
+    return s
+
 router = Router()
 
 # =========================
@@ -88,32 +100,89 @@ def get_notice_url(it):
 # =========================
 
 GIP_KEYS = [
-    "GIPUZKOA", "GUIPÚZCOA", "GUIPUZCOA",
-    "AÑARBE", "TXINGUDI"
+    # territorio
+    "GIPUZKOA",
+    "GUIPUZCOA",
+
+    # comarcas / consorcios
+    "TXINGUDI",
+    "ANARBE",
+    "AÑARBE",
+    "BIDASOA",
+    "DEBABARRENA",
+    "DEBAGOIENA",
+
+    # capitales y ciudades
+    "DONOSTIA",
+    "SAN SEBASTIAN",
+    "IRUN",
+    "EIBAR",
+    "HERNANI",
+    "TOLOSA",
+    "ZARAUTZ",
+    "AZPEITIA",
+    "AZKOITIA",
+    "ARRASATE",
+    "MONDRAGON",
+
+    # ayuntamientos / entidades
+    "UDALA",
+    "AYUNTAMIENTO",
+    "MANCOMUNIDAD",
+    "CONSORCIO",
 ]
 
 def is_gipuzkoa(it):
-    txt = (
-        (it.get("entity", {}) or {}).get("name", "") +
-        " " +
+    txt = normalize_text(
+        (it.get("entity", {}) or {}).get("name", "") + " " +
         it.get("object", "")
-    ).upper()
-
+    )
     return any(k in txt for k in GIP_KEYS)
+
 
 # =========================
 # FILTRO SERVICIOS – INGENIERÍAS
 # =========================
 
 ING_KEYS = [
-    "INGENIER", "ARQUITECT", "PROYECT",
-    "DIRECCIÓN DE OBRA", "DIRECCION DE OBRA",
-    "ASISTENCIA TÉCNICA"
+    # ingeniería general
+    "INGENIER",
+    "INGENIERIA",
+    "ING",
+
+    # proyectos
+    "PROYECT",
+    "REDACCION",
+    "ESTUDIO",
+    "MEMORIA",
+    "CALCULO",
+
+    # obra
+    "DIRECCION OBRA",
+    "DIR OBRA",
+    "ASISTENCIA TECNICA",
+    "ASIST TECN",
+    "CONTROL OBRA",
+    "SUPERVISION",
+
+    # especialidades
+    "ELECTRIC",
+    "INSTALACION",
+    "CLIMATIZACION",
+    "SANEAMIENTO",
+    "AGUA",
+    "DEPURADORA",
+    "ABASTECIMIENTO",
+    "URBANIZACION",
+    "ESTRUCTURA",
+    "CARRETERA",
+    "CAMINO",
 ]
 
 def is_ingenieria(it):
-    txt = it.get("object", "").upper()
+    txt = normalize_text(it.get("object", ""))
     return any(k in txt for k in ING_KEYS)
+
 
 
 def filter_en_plazo(items):
