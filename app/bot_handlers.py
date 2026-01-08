@@ -728,6 +728,3 @@ async def show_chat_id(msg: Message):
         f"CHAT_ID = {msg.chat.id}",
         parse_mode=None
     )
-RUNNING_NOVEDADES = set()
-
-
