@@ -473,12 +473,12 @@ def kb_resumen_nav(contrato, estado, ambito, page, total_pages):
     if page > 0:
         kb.button(
             text="◁",
-            callback_data=f"respage:{contrato}:{estado}:{ambito}:{page-1}"
+            callback_data=f"respage:{contrato}:{estado}:{page-1}"
         )
     if page < total_pages - 1:
         kb.button(
             text="▷",
-            callback_data=f"respage:{contrato}:{estado}:{ambito}:{page+1}"
+            callback_data=f"respage:{contrato}:{estado}:{page+1}"
         )
 
     # 🔍 CAMBIO DE VISTA
@@ -594,7 +594,7 @@ async def pick_vista(cb: CallbackQuery):
 
 @router.callback_query(F.data.startswith("respage:"))
 async def change_res_page(cb: CallbackQuery):
-    _, contrato, estado, ambito, page = cb.data.split(":")
+    _, contrato, estado, page = cb.data.split(":")
     page = int(page)
 
     data = await load_contracts(contrato, estado)
