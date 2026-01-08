@@ -17,6 +17,9 @@ def normalize_text(s: str) -> str:
     s = re.sub(r"[^A-Z0-9 ]+", " ", s)
     return s
 
+def setup_scheduler(bot):
+    pass
+
 router = Router()
 
 
