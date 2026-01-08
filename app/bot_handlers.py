@@ -7,6 +7,19 @@ import time
 import re
 import unicodedata
 import feedparser
+from fastapi import FastAPI
+import uvicorn
+import asyncio
+
+# =========================
+# HEALTH CHECK (UPTIMEROBOT)
+# =========================
+
+app = FastAPI()
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
 
 def normalize_text(s: str) -> str:
     if not s:
