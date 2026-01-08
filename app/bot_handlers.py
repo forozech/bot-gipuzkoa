@@ -14,6 +14,8 @@ import time
 import unicodedata
 import re
 
+pip install feedparser
+
 def normalize_text(s: str) -> str:
     if not s:
         return ""
