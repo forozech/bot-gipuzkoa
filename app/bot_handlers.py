@@ -545,18 +545,6 @@ async def pick_estado(cb: CallbackQuery):
     )
     await cb.answer()
 
-@router.callback_query(F.data.startswith("a:"))
-async def pick_ambito(cb: CallbackQuery):
-    _, contrato, estado, ambito = cb.data.split(":")
-
-    await safe_edit(
-        cb.message,
-        f"📑 **{contrato} — {estado} — {ambito} — VISTA**",
-        parse_mode="Markdown",
-        reply_markup=kb_vista(contrato, estado, ambito)
-    )
-    await cb.answer()
-
 
 @router.callback_query(F.data.startswith("v:"))
 async def pick_vista(cb: CallbackQuery):
