@@ -325,42 +325,37 @@ async def load_contracts(contrato, estado):
     page = 0
     items_per_page = 50
 
-    async with httpx.AsyncClient(timeout=15) as client:
-        while True:
-            url = (
-                "https://api.euskadi.eus/procurements/contracting-notices"
-                f"?contract-type-id={contract_type_id}"
-                f"&contract-procedure-status-id={status_id}"
-                f"&itemsOfPage={items_per_page}"
-                f"&page={page}"
-                "&lang=SPANISH"
-            )
+   async with httpx.AsyncClient(timeout=15) as client:
+    while True:
+        url = (
+            "https://api.euskadi.eus/procurements/contracting-notices"
+            f"?contract-type-id={contract_type_id}"
+            f"&contract-procedure-status-id={status_id}"
+            f"&itemsOfPage={items_per_page}"
+            f"&page={page}"
+            "&lang=SPANISH"
+        )
 
-            r = await client.get(url)
-            data = r.json()
+        r = await client.get(url)
+        data = r.json()
 
-            items = data.get("items", [])
-            if not items:
-                break
+        items = data.get("items", [])
+        if not items:
+            break
 
-            new_count = 0
-            for it in items:
-                k = it.get("id")
-                if k in seen_ids:
-                    continue
-                seen_ids.add(k)
-                all_items.append(it)
-                new_count += 1
+        for it in items:
+            k = it.get("id")
+            if k in seen_ids:
+                continue
+            seen_ids.add(k)
+            all_items.append(it)
 
-            # 🔒 si esta página no aporta nada nuevo → cortar
-            if new_count == 0:
-                break
+        # ✅ ÚNICO criterio válido de fin
+        if len(items) < items_per_page:
+            break
 
-            # última página
-            if len(items) < items_per_page:
-                break
+        page += 1
 
-            page += 1
 
     data["items"] = all_items
     set_cache(cache_key, data)
