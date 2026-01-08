@@ -190,20 +190,31 @@ GIP_MUNICIPIOS = [
 ]
 
 def is_gipuzkoa(it):
-    # 1️⃣ filtro estructural (fiable al 100%)
-    nuts = (it.get("contractingAuthority") or {}).get("codNUTS", "")
-    if nuts == "ES212":
+    # 1️⃣ NUTS en contractingAuthority.codNUTS
+    ca = it.get("contractingAuthority") or {}
+    if ca.get("codNUTS") == "ES212":
         return True
 
-    # 2️⃣ fallback por texto (por si falta NUTS)
-    parts = [
-        it.get("object", ""),
-        (it.get("entity") or {}).get("name", ""),
-        (it.get("contractingAuthority") or {}).get("name", "")
-    ]
+    # 2️⃣ NUTS en contractingAuthority.codNUTSList
+    nuts_list = ca.get("codNUTSList") or []
+    if "ES212" in nuts_list:
+        return True
 
-    txt = normalize_text(" ".join(parts))
+    # 3️⃣ NUTS en entity.codNUTS (muy común en ayuntamientos)
+    ent = it.get("entity") or {}
+    if ent.get("codNUTS") == "ES212":
+        return True
+
+    # 4️⃣ fallback por texto (solo si NO hay NUTS)
+    txt = normalize_text(
+        " ".join([
+            it.get("object", ""),
+            ent.get("name", ""),
+            ca.get("name", "")
+        ])
+    )
     return any(m in txt for m in GIP_MUNICIPIOS)
+
 
 # =========================
 # FILTRO SERVICIOS – INGENIERÍAS
