@@ -111,11 +111,13 @@ def extract_entity(entry):
 # =========================
 
 RSS_URLS = {
-    ("OBR", "ABI"): "https://www.contratacion.euskadi.eus/ac70cPublicidadWar/suscribirAnuncio/suscripcionRss?p01=1&p02=3&p26=ES212&idioma=es",
-    ("OBR", "CER"): "https://www.contratacion.euskadi.eus/ac70cPublicidadWar/suscribirAnuncio/suscripcionRss?p01=1&p02=4&p26=ES212&idioma=es",
-    ("SERV", "ABI"): "https://www.contratacion.euskadi.eus/ac70cPublicidadWar/suscribirAnuncio/suscripcionRss?p01=2&p02=3&p26=ES212&idioma=es",
-    ("SERV", "CER"): "https://www.contratacion.euskadi.eus/ac70cPublicidadWar/suscribirAnuncio/suscripcionRss?p01=2&p02=4&p26=ES212&idioma=es",
+    RSS_URLS = {
+    ("OBR", "ABI"): "https://www.contratacion.euskadi.eus/ac70cPublicidadWar/suscribirAnuncio/suscripcionRss?p01=1&p02=3&p17=FALSE&p25=FALSE&p26=ES212&p43=false&p44=FALSE&p45=1&idioma=es&R01HNoPortal=true",
+    ("OBR", "CER"): "https://www.contratacion.euskadi.eus/ac70cPublicidadWar/suscribirAnuncio/suscripcionRss?p01=1&p02=4&p17=FALSE&p25=FALSE&p26=ES212&p43=false&p44=FALSE&p45=1&idioma=es&R01HNoPortal=true",
+    ("SERV", "ABI"): "https://www.contratacion.euskadi.eus/ac70cPublicidadWar/suscribirAnuncio/suscripcionRss?p01=2&p02=3&p17=FALSE&p25=FALSE&p26=ES212&p43=false&p44=FALSE&p45=1&idioma=es&R01HNoPortal=true",
+    ("SERV", "CER"): "https://www.contratacion.euskadi.eus/ac70cPublicidadWar/suscribirAnuncio/suscripcionRss?p01=2&p02=4&p17=FALSE&p25=FALSE&p26=ES212&p43=false&p44=FALSE&p45=1&idioma=es&R01HNoPortal=true",
 }
+
 
 
 # =========================
@@ -132,7 +134,7 @@ async def load_contracts(contrato, estado):
     rss_estado = "ABI" if estado == "PLZ" else estado
     rss_url = RSS_URLS[(rss_contrato, rss_estado)]
 
-    feed = feedparser.parse(rss_url)
+    feed = feedparser.parse(
         rss_url,
         request_headers={
             "User-Agent": "Mozilla/5.0 (compatible; OCGIPBOT/1.0)"
