@@ -388,22 +388,7 @@ def build_summary_page(entities, kind, mode, summary_page, summary_page_size=4):
     )
 
     return "\n".join(lines), total_pages
-
-
-        lines.append(
-            f"🏛 **{ent}**: {len(its)} anuncio(s)\n"
-            f"   💰 " + "; ".join(amounts)
-        )
-
-    lines.append("\n👉 Usa /novedades para ver el detalle completo")
-
-    await bot.send_message(
-        chat_id=ALERT_CHAT_ID,
-        text="\n".join(lines),
-        parse_mode="Markdown",
-        disable_web_page_preview=True
-    )
-
+       
 # =========================
 # NORMALIZACIÓN / CONSTANTES
 # =========================
@@ -417,10 +402,6 @@ K_ING   = "ING"
 E_ABIERTAS = "ABI"
 E_EN_PLAZO = "PLZ"
 E_CERRADAS = "CER"
-
-# Ámbito
-A_GEN = "GEN"
-A_GIP = "GIP"
 
 # Vista
 V_RES = "RES"
@@ -451,15 +432,6 @@ def kb_estado(contrato: str):
     kb.button(text="🏫", callback_data="home")
     kb.button(text="🚀", callback_data="reset")
     kb.adjust(3, 1)
-    return kb.as_markup()
-
-def kb_ambito(contrato: str, estado: str):
-    kb = InlineKeyboardBuilder()
-    kb.button(text="🌍", callback_data=f"a:{contrato}:{estado}:GEN")
-    kb.button(text="📍", callback_data=f"a:{contrato}:{estado}:GIP")
-    kb.button(text="🏫", callback_data="home")
-    kb.button(text="🚀", callback_data="reset")
-    kb.adjust(2, 2)
     return kb.as_markup()
 
 def kb_vista(contrato: str, estado: str, ambito: str):
