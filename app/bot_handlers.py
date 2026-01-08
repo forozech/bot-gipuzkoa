@@ -99,7 +99,7 @@ def get_notice_url(it):
 # FILTRO ÁMBITO – GIPUZKOA
 # =========================
 
-GIP_KEYS = [
+GIP_MUNICIPIOS = [
     # territorio
     "GIPUZKOA",
     "GUIPUZCOA",
@@ -111,6 +111,8 @@ GIP_KEYS = [
     "BIDASOA",
     "DEBABARRENA",
     "DEBAGOIENA",
+    "SAN MARCOS",
+    "SAN MARKOS",
 
     # capitales y ciudades
     "DONOSTIA",
@@ -124,28 +126,76 @@ GIP_KEYS = [
     "AZKOITIA",
     "ARRASATE",
     "MONDRAGON",
-
-    # ayuntamientos / entidades
-    "UDALA",
-    "AYUNTAMIENTO",
-    "MANCOMUNIDAD",
-    "CONSORCIO",
+    "DONOSTIA", "SAN SEBASTIAN",
+    "HERNANI",
+    "USURBIL",
+    "LASARTE ORIA", "LASARTE-ORIA",
+    "ASTIGARRAGA",
+    "ERRENTERIA", "RENTERIA",
+    "PASAIA", "PASAJES",
+    "LEZO",
+    "OIARTZUN",
+    "IRUN",
+    "HONDARRIBIA", "FUENTERRABIA",
+    "BIDASOA",
+    "TXINGUDI",
+    "ZARAUTZ",
+    "GETARIA",
+    "ZUMAIA", "ZUMAYA",
+    "AZPEITIA",
+    "AZKOITIA",
+    "AIZARNABAL",
+    "AIA",
+    "ERREZIL",
+    "TOLOSA",
+    "ANDOAIN",
+    "ADUNA",
+    "ALKIZA",
+    "ALTZO",
+    "AMEZKETA",
+    "ANOETA",
+    "BALIARRAIN",
+    "BERASTEGI",
+    "BIDEGOIAN", "BIDEGOYAN",
+    "ELDRAIN",
+    "GAZTELU",
+    "HERNIALDE",
+    "IKAZTEGIETA",
+    "IRURA",
+    "LIZARTZA",
+    "OREXA",
+    "ARRASATE", "MONDRAGON",
+    "ARETXABALETA",
+    "BERGARA",
+    "ELGETA",
+    "ESKORIATZA",
+    "LEINTZ GATZAGA", "SALINAS DE LENIZ",
+    "OÑATI", "ONATI",
+    "EIBAR",
+    "ELGOIBAR",
+    "MENDARO",
+    "DEBA",
+    "MUTRIKU", "MOTRICO",
+    "SORALUZE", "PLACENCIA DE LAS ARMAS",
+    "BEASAIN",
+    "ORDIZIA", "VILLAFRANCA DE ORIA",
+    "ZEGAMA",
+    "SEGURA",
+    "IDIAZABAL",
+    "LAZKAO",
+    "OLABERRIA",
+    "ZALDIBIA",
+    "ATAUN",
+    "GABIRIA",
 ]
 
 def is_gipuzkoa(it):
-    scope = normalize_text(
-        (it.get("contractingAuthority") or {}).get("scope", "")
-    )
-    if "GIPUZKOA" in scope:
-        return True
-
     txt = normalize_text(
-        (it.get("entity", {}) or {}).get("name", "") + " " +
-        it.get("object", "")
+        it.get("object", "") + " " +
+        (it.get("entity") or {}).get("name", "")
     )
-    return any(k in txt for k in GIP_KEYS)
 
-
+    return any(m in txt for m in GIP_MUNICIPIOS)
 
 # =========================
 # FILTRO SERVICIOS – INGENIERÍAS
