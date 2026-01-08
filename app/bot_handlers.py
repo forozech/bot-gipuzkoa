@@ -216,6 +216,24 @@ def apply_filters(items, contrato, estado, ambito):
 
     return out
 
+def group_and_sort(items):
+    grouped = {}
+
+    for it in items:
+        ent = (it.get("entity") or {}).get("name", "OTROS")
+        grouped.setdefault(ent, []).append(it)
+
+    # ordenar entidades y contratos
+    entities = []
+    for ent, its in grouped.items():
+        its_sorted = sorted(
+            its,
+            key=lambda x: x.get("deadlineDate") or "9999-12-31"
+        )
+        entities.append((ent, its_sorted))
+
+    return sorted(entities, key=lambda x: x[0])
+
 
 # =========================
 # RESUMEN (SIN LÍMITES)
