@@ -84,20 +84,26 @@ def extract_budget(text: str):
 
 
 def extract_entity(entry):
-    # RSS suele traerlo en author o en summary
     if getattr(entry, "author", None):
         return entry.author.strip()
 
-    if entry.get("summary"):
+    text = ""
+    if entry.get("content"):
+        text = entry.content[0].value
+    elif entry.get("summary"):
+        text = entry.summary
+
+    if text:
         m = re.search(
             r"Poder adjudicador[^:]*:\s*([^<\n]+)",
-            entry.summary,
+            text,
             re.IGNORECASE
         )
         if m:
             return m.group(1).strip()
 
     return "OTROS"
+
 
 
 # =========================
