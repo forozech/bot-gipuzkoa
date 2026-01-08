@@ -190,11 +190,19 @@ GIP_MUNICIPIOS = [
 ]
 
 def is_gipuzkoa(it):
-    txt = normalize_text(
-        it.get("object", "") + " " +
-        (it.get("entity") or {}).get("name", "")
-    )
+    # 1️⃣ filtro estructural (fiable al 100%)
+    nuts = (it.get("contractingAuthority") or {}).get("codNUTS", "")
+    if nuts == "ES212":
+        return True
 
+    # 2️⃣ fallback por texto (por si falta NUTS)
+    parts = [
+        it.get("object", ""),
+        (it.get("entity") or {}).get("name", ""),
+        (it.get("contractingAuthority") or {}).get("name", "")
+    ]
+
+    txt = normalize_text(" ".join(parts))
     return any(m in txt for m in GIP_MUNICIPIOS)
 
 # =========================
