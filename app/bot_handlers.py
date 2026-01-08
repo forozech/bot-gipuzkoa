@@ -275,15 +275,16 @@ def apply_filters(items, contrato, estado, ambito):
     if estado == "PLZ":
         out = filter_en_plazo(out)
 
+    # 📐 INGENIERÍA (subconjunto de SERV)
+    if contrato == "ING":
+        out = [it for it in out if is_ingenieria(it)]
+
     # 📍 GIPUZKOA
     if ambito == "GIP":
         out = [it for it in out if is_gipuzkoa(it)]
 
-    # 📐 INGENIERÍAS
-    if contrato == "ING":
-        out = [it for it in out if is_ingenieria(it)]
-
     return out
+
 
 def group_and_sort(items):
     grouped = {}
