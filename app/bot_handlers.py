@@ -456,7 +456,7 @@ def kb_detalle_nav(contrato, estado, page, total_pages):
     # 📋 CAMBIO DE VISTA
     kb.button(
         text="📋 Resumen",
-        callback_data=f"v:{contrato}:{estado}:{ambito}:RES"
+        callback_data=f"v:{contrato}:{estado}:RES"
     )
 
     kb.button(text="🏠", callback_data="home")
@@ -484,7 +484,7 @@ def kb_resumen_nav(contrato, estado, page, total_pages):
     # 🔍 CAMBIO DE VISTA
     kb.button(
         text="🔍 Detalle",
-        callback_data=f"v:{contrato}:{estado}:{ambito}:DET"
+        callback_data=f"v:{contrato}:{estado}:DET"
     )
 
     # acciones globales
@@ -546,12 +546,12 @@ async def pick_estado(cb: CallbackQuery):
 async def pick_vista(cb: CallbackQuery):
     _, contrato, estado, vista = cb.data.split(":")
 
-    header = build_header(vista, contrato, ambito, estado)
+    header = build_header(vista, contrato, estado)
 
     data = await load_contracts(contrato, estado)
     items = data.get("items", [])
 
-    items = apply_filters(items, contrato, estado, ambito)
+    items = apply_filters(items, contrato, estado)
     entities = group_and_sort(items)
 
     if not entities:
@@ -559,7 +559,7 @@ async def pick_vista(cb: CallbackQuery):
             cb.message,
             f"{header}\n\nℹ️ No hay resultados.",
             parse_mode="Markdown",
-            reply_markup=kb_vista(contrato, estado, ambito)
+            reply_markup=kb_vista(contrato, estado)
         )
         return
 
@@ -600,7 +600,7 @@ async def change_res_page(cb: CallbackQuery):
     data = await load_contracts(contrato, estado)
     items = data.get("items", [])
 
-    items = apply_filters(items, contrato, estado, ambito)
+    items = apply_filters(items, contrato, estado)
     entities = group_and_sort(items)
 
     if not entities:
@@ -647,7 +647,7 @@ async def change_det_page(cb: CallbackQuery):
     data = await load_contracts(contrato, estado)
     items = data.get("items", [])
 
-    items = apply_filters(items, contrato, estado, ambito)
+    items = apply_filters(items, contrato, estado)
     entities = group_and_sort(items)
 
     await render_page(
