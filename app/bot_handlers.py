@@ -430,10 +430,10 @@ def kb_estado(contrato: str):
     kb.adjust(3, 1)
     return kb.as_markup()
 
-def kb_vista(contrato: str, estado: str, ambito: str):
+def kb_vista(contrato: str, estado: str):
     kb = InlineKeyboardBuilder()
-    kb.button(text="📋", callback_data=f"v:{contrato}:{estado}:{ambito}:RES")
-    kb.button(text="🔍", callback_data=f"v:{contrato}:{estado}:{ambito}:DET")
+    kb.button(text="📋", callback_data=f"v:{contrato}:{estado}:RES")
+    kb.button(text="🔍", callback_data=f"v:{contrato}:{estado}:DET")
     kb.button(text="🏫", callback_data="home")
     kb.button(text="🚀", callback_data="reset")
     kb.adjust(2, 2)
