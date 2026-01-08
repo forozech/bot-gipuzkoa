@@ -154,6 +154,7 @@ async def load_contracts(contrato, estado):
         return cached
 
     all_items = []
+    seen_ids = set()          # 🔥 BONUS
     page = 0
     items_per_page = 50
 
@@ -175,9 +176,20 @@ async def load_contracts(contrato, estado):
             if not items:
                 break
 
-            all_items.extend(items)
+            new_count = 0
+            for it in items:
+                k = it.get("id")
+                if k in seen_ids:
+                    continue
+                seen_ids.add(k)
+                all_items.append(it)
+                new_count += 1
 
-            # si la página viene incompleta, ya no hay más
+            # 🔒 si esta página no aporta nada nuevo → cortar
+            if new_count == 0:
+                break
+
+            # última página
             if len(items) < items_per_page:
                 break
 
@@ -186,41 +198,7 @@ async def load_contracts(contrato, estado):
     data["items"] = all_items
     set_cache(cache_key, data)
     return data
-
-def apply_filters(items, contrato, estado, ambito):
-    out = items
-
-    # EN PLAZO
-    if estado == "PLZ":
-        out = filter_en_plazo(out)
-
-    # GIPUZKOA
-    if ambito == "GIP":
-        out = [it for it in out if is_gipuzkoa(it)]
-
-    # INGENIERÍAS (solo SERV)
-    if contrato == "ING":
-        out = [it for it in out if is_ingenieria(it)]
-
-    return out
-
-def group_and_sort(items):
-    grouped = {}
-
-    for it in items:
-        ent = (it.get("entity") or {}).get("name", "OTROS")
-        grouped.setdefault(ent, []).append(it)
-
-    # ordena entidades y dentro por fecha límite
-    entities = []
-    for ent, its in grouped.items():
-        its_sorted = sorted(
-            its,
-            key=lambda x: x.get("deadlineDate") or "9999-12-31"
-        )
-        entities.append((ent, its_sorted))
-
-    return sorted(entities, key=lambda x: x[0])
+)
 
 # =========================
 # RESUMEN (SIN LÍMITES)
