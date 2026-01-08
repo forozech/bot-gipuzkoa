@@ -685,7 +685,7 @@ async def render_page(cb, kind, mode, entities, page, page_size=2, ambito=None):
                 f"⏱️ DESDE: {fmt_date(it.get('firstPublicationDate'))}\n"
                 f"⏰🖊 HASTA: {fmt_date(it.get('deadlineDate'))}\n"
                 f"💰 {fmt_money(it.get('budgetWithoutVAT'))}\n"
-                f"🔗 {it.get('mainEntityOfPage','—')}\n"
+                f"🔗 {url}" if url else "🔗 —"
             )
             counter += 1
         text = (
