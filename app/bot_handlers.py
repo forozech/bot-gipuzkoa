@@ -8,7 +8,6 @@ from apscheduler.triggers.cron import CronTrigger
 import pytz
 import asyncio
 from datetime import timezone
-import httpx
 import time
 
 import unicodedata
