@@ -26,6 +26,129 @@ def normalize_text(s: str) -> str:
     return s
 
 router = Router()
+import feedparser
+import re
+from datetime import datetime
+
+# =========================
+# EXTRACCIONES DESDE RSS
+# =========================
+
+RE_DEADLINE = re.compile(
+    r"Fecha límite[^0-9]*([0-9]{2}/[0-9]{2}/[0-9]{4})",
+    re.IGNORECASE
+)
+
+RE_BUDGET = re.compile(
+    r"Presupuesto[^0-9]*([\d\.]+,\d{2})",
+    re.IGNORECASE
+)
+
+
+def extract_deadline(text: str):
+    if not text:
+        return None
+
+    m = RE_DEADLINE.search(text)
+    if not m:
+        return None
+
+    try:
+        return datetime.strptime(m.group(1), "%d/%m/%Y").date().isoformat()
+    except Exception:
+        return None
+
+
+def extract_budget(text: str):
+    if not text:
+        return None
+
+    m = RE_BUDGET.search(text)
+    if not m:
+        return None
+
+    try:
+        return float(
+            m.group(1)
+            .replace(".", "")
+            .replace(",", ".")
+        )
+    except Exception:
+        return None
+
+
+def extract_entity(entry):
+    # RSS suele traerlo en author o en summary
+    if getattr(entry, "author", None):
+        return entry.author.strip()
+
+    if entry.get("summary"):
+        m = re.search(
+            r"Poder adjudicador[^:]*:\s*([^<\n]+)",
+            entry.summary,
+            re.IGNORECASE
+        )
+        if m:
+            return m.group(1).strip()
+
+    return "OTROS"
+
+
+# =========================
+# RSS URLs (GIPUZKOA)
+# =========================
+
+RSS_URLS = {
+    ("OBR", "ABI"): "https://www.contratacion.euskadi.eus/ac70cPublicidadWar/suscribirAnuncio/suscripcionRss?p01=1&p02=3&p26=ES212&idioma=es",
+    ("OBR", "CER"): "https://www.contratacion.euskadi.eus/ac70cPublicidadWar/suscribirAnuncio/suscripcionRss?p01=1&p02=4&p26=ES212&idioma=es",
+    ("SERV", "ABI"): "https://www.contratacion.euskadi.eus/ac70cPublicidadWar/suscribirAnuncio/suscripcionRss?p01=2&p02=3&p26=ES212&idioma=es",
+    ("SERV", "CER"): "https://www.contratacion.euskadi.eus/ac70cPublicidadWar/suscribirAnuncio/suscripcionRss?p01=2&p02=4&p26=ES212&idioma=es",
+}
+
+
+# =========================
+# LOAD CONTRACTS DESDE RSS
+# =========================
+
+async def load_contracts(contrato, estado):
+    """
+    contrato: OBR | SERV | ING
+    estado: ABI | PLZ | CER
+    """
+
+    # Ingeniería es subconjunto de servicios
+    rss_contrato = "SERV" if contrato == "ING" else contrato
+
+    rss_estado = "ABI" if estado == "PLZ" else estado
+    rss_url = RSS_URLS[(rss_contrato, rss_estado)]
+
+    feed = feedparser.parse(rss_url)
+
+    items = []
+
+    for e in feed.entries:
+        summary = e.get("summary", "")
+
+        item = {
+            "id": e.get("id") or e.get("link"),
+            "object": e.get("title", "").strip(),
+            "entity": {
+                "name": extract_entity(e)
+            },
+            "firstPublicationDate": (
+                datetime(*e.published_parsed[:6]).date().isoformat()
+                if getattr(e, "published_parsed", None)
+                else None
+            ),
+            "deadlineDate": extract_deadline(summary),
+            "budgetWithoutVAT": extract_budget(summary),
+            "mainEntityOfPage": e.get("link"),
+        }
+
+        items.append(item)
+
+    return {"items": items}
+
 
 # =========================
 # SAFE EDIT (evita errores Telegram)
