@@ -67,6 +67,22 @@ def fmt_money(x):
         return "—"
     return f"{x:,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".")
 
+def get_notice_url(it):
+    """
+    Devuelve SIEMPRE el enlace correcto al anuncio.
+    Nunca el del poder adjudicador.
+    """
+    # 1️⃣ enlace público del anuncio (el bueno)
+    if it.get("mainEntityOfPage"):
+        return it["mainEntityOfPage"]
+
+    # 2️⃣ fallback: enlace API del notice
+    self_link = ((it.get("_links") or {}).get("self") or {}).get("href")
+    if self_link:
+        return self_link
+
+    return None
+
 # =========================
 # FILTRO ÁMBITO – GIPUZKOA
 # =========================
