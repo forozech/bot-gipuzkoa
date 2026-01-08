@@ -427,26 +427,6 @@ ALERT_DAYS = 7
 
 import feedparser
 
-async def load_contracts(contrato, estado):
-    key = (contrato if contrato != "ING" else "SERV", estado)
-    rss_url = RSS_URLS[key]
-
-    feed = feedparser.parse(rss_url)
-
-    items = []
-    for e in feed.entries:
-        items.append({
-            "id": e.id,
-            "object": e.title,
-            "link": e.link,
-            "entity": e.get("author", ""),
-            "firstPublicationDate": e.published,
-            "deadlineDate": extract_deadline(e.summary),
-            "budgetWithoutVAT": extract_budget(e.summary),
-        })
-
-    return {"items": items}
-
 def apply_filters(items, contrato, estado):
     out = items
 
