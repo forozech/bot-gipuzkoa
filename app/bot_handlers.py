@@ -439,7 +439,7 @@ def kb_vista(contrato: str, estado: str):
     kb.adjust(2, 2)
     return kb.as_markup()
 
-def kb_detalle_nav(contrato, estado, ambito, page, total_pages):
+def kb_detalle_nav(contrato, estado, page, total_pages):
     kb = InlineKeyboardBuilder()
 
     if page > 0:
@@ -466,7 +466,7 @@ def kb_detalle_nav(contrato, estado, ambito, page, total_pages):
     return kb.as_markup()
 
 
-def kb_resumen_nav(contrato, estado, ambito, page, total_pages):
+def kb_resumen_nav(contrato, estado, page, total_pages):
     kb = InlineKeyboardBuilder()
 
     # navegación
@@ -577,7 +577,7 @@ async def pick_vista(cb: CallbackQuery):
             cb.message,
             text,
             parse_mode="Markdown",
-            reply_markup=kb_resumen_nav(contrato, estado, ambito, 0, total_pages),
+            reply_markup=kb_resumen_nav(contrato, estado, 0, total_pages),
             disable_web_page_preview=True
         )
         return
@@ -608,7 +608,7 @@ async def change_res_page(cb: CallbackQuery):
             cb.message,
             "ℹ️ No hay resultados.",
             parse_mode="Markdown",
-            reply_markup=kb_resumen_nav(contrato, estado, ambito, 0, 1)
+            reply_markup=kb_resumen_nav(contrato, estado, 0, 1)
         )
         return
 
@@ -633,7 +633,7 @@ async def change_res_page(cb: CallbackQuery):
         text,
         parse_mode="Markdown",
         reply_markup=kb_resumen_nav(
-            contrato, estado, ambito, page, total_pages
+            contrato, estado, page, total_pages
         ),
         disable_web_page_preview=True
     )
@@ -657,13 +657,12 @@ async def change_det_page(cb: CallbackQuery):
         entities=entities,
         page=page,
         page_size=2,
-        ambito=ambito  # lo ajustamos abajo
     )
 
 # =========================
 # RENDER DETALLE
 # =========================
-async def render_page(cb, kind, mode, entities, page, page_size=2, ambito=None):
+async def render_page(cb, kind, mode, entities, page, page_size=2):
     is_callback = hasattr(cb, "message")
     message = cb.message if is_callback else cb
 
@@ -711,7 +710,7 @@ async def render_page(cb, kind, mode, entities, page, page_size=2, ambito=None):
             message,
             text,
             parse_mode="Markdown",
-            reply_markup=kb_detalle_nav(kind, mode, ambito, page, total_pages),
+            reply_markup=kb_detalle_nav(kind, mode, page, total_pages),
             disable_web_page_preview=True
         )
         await cb.answer()
@@ -719,7 +718,7 @@ async def render_page(cb, kind, mode, entities, page, page_size=2, ambito=None):
         await message.answer(
             text,
             parse_mode="Markdown",
-            reply_markup=kb_detalle_nav(kind, mode, ambito, page, total_pages),
+            reply_markup=kb_detalle_nav(kind, mode, page, total_pages),
             disable_web_page_preview=True
         )
 
