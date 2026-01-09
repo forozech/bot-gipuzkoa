@@ -218,29 +218,27 @@ async def load_contracts(contrato, estado):
     print(f"[RSS] {rss_url} -> {len(feed.entries)} entradas")
 
     for e in feed.entries:
-        text = ""
-        if e.get("content"):
-            text = e.content[0].value
-        elif e.get("summary"):
-            text = e.summary
+    item = {
+        "id": e.get("id") or e.get("link"),
+        "object": e.get("title", "").strip(),
+        "entity": {"name": "Contratación Euskadi"},
+        "firstPublicationDate": (
+            datetime(*e.published_parsed[:6]).date().isoformat()
+            if getattr(e, "published_parsed", None)
+            else None
+        ),
+        "deadlineDate": None,
+        "budgetWithoutVAT": None,
+        "mainEntityOfPage": e.get("link"),
+    }
 
-        item = {
-            "id": e.get("id") or e.get("link"),
-            "object": e.get("title", "").strip(),
-            "entity": {
-                "name": extract_entity(e)
-            },
-            "firstPublicationDate": (
-                datetime(*e.published_parsed[:6]).date().isoformat()
-                if getattr(e, "published_parsed", None)
-                else None
-            ),
-            "deadlineDate": extract_deadline(text),
-            "budgetWithoutVAT": extract_budget(text),
-            "mainEntityOfPage": e.get("link"),
-        }
+    # 🔥 ENRIQUECER DESDE HTML
+    if item["mainEntityOfPage"]:
+        extra = await scrape_notice(item["mainEntityOfPage"])
+        item.update(extra)
 
-        items.append(item)
+    items.append(item)
+
 
     return {"items": items}
 
