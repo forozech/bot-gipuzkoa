@@ -55,6 +55,75 @@ RE_BUDGET = re.compile(
     re.IGNORECASE
 )
 
+# =========================
+# SCRAPING HTML ANUNCIO
+# =========================
+
+SEM = asyncio.Semaphore(2)  # máximo 2 peticiones simultáneas
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (compatible; OCGIPBOT/1.0)"
+}
+
+async def scrape_notice(url: str):
+    async with SEM:
+        try:
+            async with httpx.AsyncClient(
+                headers=HEADERS,
+                timeout=20,
+                follow_redirects=True
+            ) as client:
+                r = await client.get(url)
+                r.raise_for_status()
+        except Exception:
+            return {}
+
+    soup = BeautifulSoup(r.text, "html.parser")
+    text = soup.get_text(" ", strip=True)
+
+    out = {}
+
+    # 📅 FECHA LÍMITE
+    m = re.search(
+        r"Fecha límite.*?(\d{2}/\d{2}/\d{4})",
+        text,
+        re.IGNORECASE
+    )
+    if m:
+        try:
+            out["deadlineDate"] = datetime.strptime(
+                m.group(1), "%d/%m/%Y"
+            ).date().isoformat()
+        except Exception:
+            pass
+
+    # 💰 PRESUPUESTO
+    m = re.search(
+        r"Presupuesto.*?([\d\.]+,\d{2})",
+        text,
+        re.IGNORECASE
+    )
+    if m:
+        try:
+            out["budgetWithoutVAT"] = float(
+                m.group(1)
+                .replace(".", "")
+                .replace(",", ".")
+            )
+        except Exception:
+            pass
+
+    # 🏛 ÓRGANO DE CONTRATACIÓN
+    m = re.search(
+        r"Órgano de contratación\s*([^·]+)",
+        text,
+        re.IGNORECASE
+    )
+    if m:
+        out["entity"] = {"name": m.group(1).strip()}
+
+    return out
+
 
 def extract_deadline(text: str):
     if not text:
