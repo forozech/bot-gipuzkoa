@@ -12,6 +12,8 @@ import uvicorn
 import asyncio
 import feedparser
 
+import httpx
+from bs4 import BeautifulSoup
 
 
 # =========================
