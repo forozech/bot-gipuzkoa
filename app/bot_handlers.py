@@ -217,12 +217,6 @@ async def load_contracts(contrato, estado):
 
     print(f"[RSS] {rss_url} -> {len(feed.entries)} entradas")
 
-    print(
-        item["object"],
-        item["deadlineDate"],
-        item["budgetWithoutVAT"]
-    )
-
     for e in feed.entries:
         item = {
             "id": e.get("id") or e.get("link"),
