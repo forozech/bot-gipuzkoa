@@ -249,12 +249,14 @@ async def load_contracts(contrato, estado):
 # SAFE EDIT (evita errores Telegram)
 # =========================
 async def safe_edit(message, text: str, **kwargs):
+    kwargs.pop("parse_mode", None)  # 🔥 fuerza texto plano
     try:
         await message.edit_text(text, **kwargs)
     except TelegramBadRequest as e:
         if "message is not modified" in str(e):
             return
         raise
+
 
 # =========================
 # CACHE EN MEMORIA
