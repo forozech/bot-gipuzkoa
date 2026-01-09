@@ -381,8 +381,12 @@ def filter_en_plazo(items):
 
     for it in items:
         d = it.get("deadlineDate")
+
+        # ⚠️ si no hay deadline, NO se descarta
         if not d:
+            out.append(it)
             continue
+
         try:
             if datetime.fromisoformat(d[:10]).date() >= today:
                 out.append(it)
@@ -390,6 +394,7 @@ def filter_en_plazo(items):
             pass
 
     return out
+
 
 BIG_AMOUNT = 1_000_000
 ALERT_DAYS = 7
