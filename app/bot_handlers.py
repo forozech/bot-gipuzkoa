@@ -10,6 +10,9 @@ import feedparser
 from fastapi import FastAPI
 import uvicorn
 import asyncio
+import feedparser
+
+
 
 # =========================
 # HEALTH CHECK (UPTIMEROBOT)
