@@ -7,3 +7,5 @@ httpx
 APScheduler
 pytz
 feedparser
+httpx
+beautifulsoup4
