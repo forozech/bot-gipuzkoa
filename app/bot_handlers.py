@@ -218,26 +218,28 @@ async def load_contracts(contrato, estado):
     print(f"[RSS] {rss_url} -> {len(feed.entries)} entradas")
 
     for e in feed.entries:
-    item = {
-        "id": e.get("id") or e.get("link"),
-        "object": e.get("title", "").strip(),
-        "entity": {"name": "Contratación Euskadi"},
-        "firstPublicationDate": (
-            datetime(*e.published_parsed[:6]).date().isoformat()
-            if getattr(e, "published_parsed", None)
-            else None
-        ),
-        "deadlineDate": None,
-        "budgetWithoutVAT": None,
-        "mainEntityOfPage": e.get("link"),
-    }
+        item = {
+            "id": e.get("id") or e.get("link"),
+            "object": e.get("title", "").strip(),
+            "entity": {"name": "Contratación Euskadi"},
+            "firstPublicationDate": (
+                datetime(*e.published_parsed[:6]).date().isoformat()
+                if getattr(e, "published_parsed", None)
+                else None
+            ),
+            "deadlineDate": None,
+            "budgetWithoutVAT": None,
+            "mainEntityOfPage": e.get("link"),
+        }
 
-    # 🔥 ENRIQUECER DESDE HTML
-    if item["mainEntityOfPage"]:
-        extra = await scrape_notice(item["mainEntityOfPage"])
-        item.update(extra)
+        # 🔥 ENRIQUECER DESDE HTML
+        if item["mainEntityOfPage"]:
+            extra = await scrape_notice(item["mainEntityOfPage"])
+            item.update(extra)
 
-    items.append(item)
+        items.append(item)
+
+
 
 
     return {"items": items}
