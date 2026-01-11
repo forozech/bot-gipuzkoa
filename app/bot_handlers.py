@@ -234,10 +234,11 @@ async def load_contracts(contrato, estado):
             "mainEntityOfPage": e.get("link"),
         }
 
-        # 🔥 ENRIQUECER DESDE HTML
-        if item["mainEntityOfPage"]:
+        # 🔥 ENRIQUECER DESDE HTML (OPCIONAL)
+        if ENRICH_FROM_HTML and item["mainEntityOfPage"]:
             extra = await scrape_notice(item["mainEntityOfPage"])
             item.update(extra)
+
 
         items.append(item)
 
@@ -840,3 +841,5 @@ async def show_chat_id(msg: Message):
         f"CHAT_ID = {msg.chat.id}",
         parse_mode=None
     )
+if not ENRICH_FROM_HTML:
+    print("[INFO] Enriquecimiento HTML desactivado (RSS-only)")
