@@ -486,11 +486,8 @@ def build_summary_page(entities, kind, mode, summary_page, summary_page_size=4):
 
             icon = "💎" if amount and amount >= BIG_AMOUNT else "💵"
 
-            lines.append(
-                f"⏰ {deadline}{alert} · {icon} {money}"
-            )
-
-        lines.append(f"🏷 TOTAL: {fmt_money(total)}")
+            lines.append(f"• {published} · {it.get('object','(Sin título)')}")
+            lines.append(f"🏷 TOTAL: {fmt_money(total)}")
 
     lines.append(
         f"\n📄 _Resumen · Página {summary_page+1}/{total_pages}_"
