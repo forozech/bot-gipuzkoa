@@ -15,6 +15,8 @@ import asyncio
 import httpx
 from bs4 import BeautifulSoup
 
+ENRICH_FROM_HTML = False
+
 
 # =========================
 # HEALTH CHECK (UPTIMEROBOT)
